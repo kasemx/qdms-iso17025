@@ -114,6 +114,10 @@ export default function TrainingPlansPage() {
   const [deletingPlan, setDeletingPlan] = useState<TrainingPlan | null>(null)
   const [formData, setFormData] = useState<Partial<TrainingPlan>>({})
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [selectedPlans, setSelectedPlans] = useState<string[]>([])
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false)
+  const [isBulkStatusDialogOpen, setIsBulkStatusDialogOpen] = useState(false)
+  const [bulkStatus, setBulkStatus] = useState("")
 
   // Durum filtreleri
   const statusFilters = [
@@ -468,6 +472,62 @@ export default function TrainingPlansPage() {
     setIsNewPlanDialogOpen(false)
   }
 
+  // Bulk Operations
+  const handleSelectPlan = (planId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedPlans(prev => [...prev, planId])
+    } else {
+      setSelectedPlans(prev => prev.filter(id => id !== planId))
+    }
+  }
+
+  const handleSelectAllPlans = (checked: boolean) => {
+    if (checked) {
+      setSelectedPlans(filteredPlans.map(plan => plan.id))
+    } else {
+      setSelectedPlans([])
+    }
+  }
+
+  const handleBulkDelete = () => {
+    if (selectedPlans.length === 0) {
+      toast.error("Lütfen silinecek eğitim planlarını seçin")
+      return
+    }
+    setIsBulkDeleteDialogOpen(true)
+  }
+
+  const confirmBulkDelete = () => {
+    setPlans(prev => prev.filter(plan => !selectedPlans.includes(plan.id)))
+    toast.success(`${selectedPlans.length} eğitim planı başarıyla silindi`)
+    setSelectedPlans([])
+    setIsBulkDeleteDialogOpen(false)
+  }
+
+  const handleBulkStatusChange = () => {
+    if (selectedPlans.length === 0) {
+      toast.error("Lütfen durumu değiştirilecek eğitim planlarını seçin")
+      return
+    }
+    if (!bulkStatus) {
+      toast.error("Lütfen yeni durumu seçin")
+      return
+    }
+    setIsBulkStatusDialogOpen(true)
+  }
+
+  const confirmBulkStatusChange = () => {
+    setPlans(prev => prev.map(plan => 
+      selectedPlans.includes(plan.id) 
+        ? { ...plan, status: bulkStatus }
+        : plan
+    ))
+    toast.success(`${selectedPlans.length} eğitim planının durumu "${getStatusText(bulkStatus)}" olarak güncellendi`)
+    setSelectedPlans([])
+    setBulkStatus("")
+    setIsBulkStatusDialogOpen(false)
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -503,6 +563,26 @@ export default function TrainingPlansPage() {
           <p className="text-muted-foreground">Personel eğitim planlaması ve takibi</p>
         </div>
         <div className="flex gap-2">
+          {selectedPlans.length > 0 && (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleBulkStatusChange}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Durum Değiştir ({selectedPlans.length})
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={handleBulkDelete}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Seçilenleri Sil ({selectedPlans.length})
+              </Button>
+            </>
+          )}
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Rapor İndir
@@ -698,6 +778,12 @@ export default function TrainingPlansPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>
+                    <Checkbox
+                      checked={selectedPlans.length === filteredPlans.length && filteredPlans.length > 0}
+                      onCheckedChange={handleSelectAllPlans}
+                    />
+                  </TableHead>
                   <TableHead>Eğitim</TableHead>
                   <TableHead>Kategori</TableHead>
                   <TableHead>Durum</TableHead>
@@ -715,6 +801,12 @@ export default function TrainingPlansPage() {
                   
                   return (
                     <TableRow key={plan.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedPlans.includes(plan.id)}
+                          onCheckedChange={(checked) => handleSelectPlan(plan.id, checked as boolean)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{plan.title}</div>
@@ -1260,6 +1352,65 @@ export default function TrainingPlansPage() {
             <Button variant="destructive" onClick={confirmDelete}>
               <X className="h-4 w-4 mr-2" />
               Sil
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Dialog */}
+      <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Seçilen Eğitim Planlarını Sil</DialogTitle>
+            <DialogDescription>
+              {selectedPlans.length} eğitim planını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkDeleteDialogOpen(false)}>
+              İptal
+            </Button>
+            <Button variant="destructive" onClick={confirmBulkDelete}>
+              <X className="h-4 w-4 mr-2" />
+              Sil ({selectedPlans.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Status Change Dialog */}
+      <Dialog open={isBulkStatusDialogOpen} onOpenChange={setIsBulkStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Seçilen Eğitim Planlarının Durumunu Değiştir</DialogTitle>
+            <DialogDescription>
+              {selectedPlans.length} eğitim planının durumunu değiştirin
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="bulkStatus">Yeni Durum</Label>
+              <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Durum seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="planned">Planlandı</SelectItem>
+                  <SelectItem value="ongoing">Devam Ediyor</SelectItem>
+                  <SelectItem value="completed">Tamamlandı</SelectItem>
+                  <SelectItem value="cancelled">İptal Edildi</SelectItem>
+                  <SelectItem value="postponed">Ertelendi</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkStatusDialogOpen(false)}>
+              İptal
+            </Button>
+            <Button onClick={confirmBulkStatusChange}>
+              <Settings className="h-4 w-4 mr-2" />
+              Durumu Değiştir ({selectedPlans.length})
             </Button>
           </DialogFooter>
         </DialogContent>
