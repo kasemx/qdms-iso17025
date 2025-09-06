@@ -56,6 +56,7 @@ import {
   Play,
   Pause,
   RotateCcw,
+  X,
 } from "lucide-react"
 import { mockApi } from "@/lib/mock-data"
 
@@ -105,6 +106,11 @@ export default function TrainingPlansPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
   const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isNewPlanDialogOpen, setIsNewPlanDialogOpen] = useState(false)
+  const [editingPlan, setEditingPlan] = useState<TrainingPlan | null>(null)
+  const [deletingPlan, setDeletingPlan] = useState<TrainingPlan | null>(null)
 
   // Durum filtreleri
   const statusFilters = [
@@ -352,6 +358,76 @@ export default function TrainingPlansPage() {
     return diffDays
   }
 
+  // CRUD Fonksiyonları
+  const handleNewPlan = () => {
+    setEditingPlan(null)
+    setIsNewPlanDialogOpen(true)
+  }
+
+  const handleEditPlan = (plan: TrainingPlan) => {
+    setEditingPlan(plan)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleDeletePlan = (plan: TrainingPlan) => {
+    setDeletingPlan(plan)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (deletingPlan) {
+      setPlans(prev => prev.filter(p => p.id !== deletingPlan.id))
+      setDeletingPlan(null)
+      setIsDeleteDialogOpen(false)
+    }
+  }
+
+  const handleSavePlan = (planData: Partial<TrainingPlan>) => {
+    if (editingPlan) {
+      // Güncelleme
+      setPlans(prev => prev.map(p => p.id === editingPlan.id ? { ...p, ...planData } : p))
+    } else {
+      // Yeni ekleme
+      const newPlan: TrainingPlan = {
+        id: `plan-${Date.now()}`,
+        title: planData.title || "",
+        description: planData.description || "",
+        category: planData.category || "technical",
+        type: planData.type || "İç Eğitim",
+        level: planData.level || "Başlangıç",
+        duration: planData.duration || 8,
+        startDate: planData.startDate || new Date().toISOString().split('T')[0],
+        endDate: planData.endDate || new Date().toISOString().split('T')[0],
+        status: planData.status || "planned",
+        instructor: planData.instructor || "",
+        location: planData.location || "",
+        maxParticipants: planData.maxParticipants || 20,
+        currentParticipants: 0,
+        objectives: planData.objectives || [],
+        prerequisites: planData.prerequisites || [],
+        materials: planData.materials || [],
+        assessmentMethod: planData.assessmentMethod || "Sınav",
+        passingScore: planData.passingScore || 70,
+        certificateIssued: planData.certificateIssued || true,
+        cost: planData.cost || 0,
+        budget: planData.budget || 0,
+        department: planData.department || "",
+        priority: planData.priority || "medium",
+        createdBy: "Mevcut Kullanıcı",
+        createdDate: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString().split('T')[0],
+        completionRate: 0,
+        satisfactionScore: 0,
+        effectivenessScore: 0,
+        notes: planData.notes || "",
+      }
+      setPlans(prev => [...prev, newPlan])
+    }
+    setEditingPlan(null)
+    setIsEditDialogOpen(false)
+    setIsNewPlanDialogOpen(false)
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -391,7 +467,7 @@ export default function TrainingPlansPage() {
             <Download className="h-4 w-4 mr-2" />
             Rapor İndir
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleNewPlan}>
             <Plus className="h-4 w-4 mr-2" />
             Yeni Plan
           </Button>
@@ -647,14 +723,26 @@ export default function TrainingPlansPage() {
                               setSelectedPlan(plan)
                               setIsDetailDialogOpen(true)
                             }}
+                            title="Detayları Görüntüle"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditPlan(plan)}
+                            title="Düzenle"
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeletePlan(plan)}
+                            title="Sil"
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -732,7 +820,12 @@ export default function TrainingPlansPage() {
                           <Eye className="h-4 w-4 mr-2" />
                           Görüntüle
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditPlan(plan)}
+                          title="Düzenle"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
@@ -874,9 +967,35 @@ export default function TrainingPlansPage() {
             <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>
               Kapat
             </Button>
-            <Button>
+            <Button onClick={() => {
+              if (selectedPlan) {
+                handleEditPlan(selectedPlan)
+                setIsDetailDialogOpen(false)
+              }
+            }}>
               <Edit className="h-4 w-4 mr-2" />
               Düzenle
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Silme Onay Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eğitim Planını Sil</DialogTitle>
+            <DialogDescription>
+              "{deletingPlan?.title}" eğitim planını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              İptal
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              <X className="h-4 w-4 mr-2" />
+              Sil
             </Button>
           </DialogFooter>
         </DialogContent>
