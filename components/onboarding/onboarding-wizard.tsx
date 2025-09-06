@@ -29,7 +29,7 @@ import {
   Target,
   BookOpen,
   Play,
-  Skip,
+  SkipForward,
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -594,7 +594,7 @@ export function OnboardingWizard({
                   {completedSteps.has(step.id) ? (
                     <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : skippedSteps.has(step.id) ? (
-                    <Skip className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : (
                     <step.icon className="w-3 h-3 sm:w-4 sm:h-4" />
                   )}
@@ -628,7 +628,7 @@ export function OnboardingWizard({
                 onClick={handleSkip}
                 className="w-full sm:w-auto"
               >
-                <Skip className="w-4 h-4 mr-2" />
+                <SkipForward className="w-4 h-4 mr-2" />
                 Atla
               </Button>
             )}

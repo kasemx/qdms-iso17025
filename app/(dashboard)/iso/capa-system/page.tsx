@@ -322,6 +322,45 @@ export default function CAPASystemPage() {
     return <Badge className={variants[type] || "bg-gray-100 text-gray-800"}>{type}</Badge>
   }
 
+  const handleCAPASubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Validation
+    if (!capaFormData.capaNumber || !capaFormData.title || !capaFormData.description) {
+      toast.error("Lütfen tüm zorunlu alanları doldurun")
+      return
+    }
+
+    try {
+      if (editingCAPA) {
+        // Update existing CAPA
+        const updatedCAPA = {
+          ...editingCAPA,
+          ...capaFormData,
+          updatedAt: new Date().toISOString()
+        }
+        setCapas(prev => prev.map(capa => capa.id === editingCAPA.id ? updatedCAPA : capa))
+        toast.success("CAPA başarıyla güncellendi")
+      } else {
+        // Create new CAPA
+        const newCAPA: CAPA = {
+          id: `capa-${Date.now()}`,
+          ...capaFormData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+        setCapas(prev => [...prev, newCAPA])
+        toast.success("CAPA başarıyla oluşturuldu")
+      }
+      
+      setIsCAPADialogOpen(false)
+      setEditingCAPA(null)
+    } catch (error) {
+      console.error("CAPA save error:", error)
+      toast.error("CAPA kaydedilirken hata oluştu")
+    }
+  }
+
   const filteredCAPAs = capas.filter((capa) => {
     const matchesSearch = 
       capa.capaNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -453,10 +492,63 @@ export default function CAPASystemPage() {
         <TabsContent value="capas" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">CAPA Listesi</h2>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Yeni CAPA
-            </Button>
+            <Dialog open={isCAPADialogOpen} onOpenChange={setIsCAPADialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => {
+                  setEditingCAPA(null)
+                  setCapaFormData({
+                    capaNumber: "",
+                    title: "",
+                    description: "",
+                    type: "",
+                    source: "",
+                    priority: "",
+                    status: "open",
+                    owner: "",
+                    identifiedDate: "",
+                    dueDate: "",
+                    completionDate: "",
+                    rootCause: {
+                      analysis: "",
+                      causes: [],
+                      method: "",
+                      analyst: "",
+                      date: ""
+                    },
+                    correctiveActions: [],
+                    preventiveActions: [],
+                    verification: {
+                      method: "",
+                      criteria: "",
+                      results: "",
+                      verifier: "",
+                      date: "",
+                      status: ""
+                    },
+                    effectiveness: {
+                      evaluation: "",
+                      metrics: "",
+                      results: "",
+                      evaluator: "",
+                      date: "",
+                      status: ""
+                    },
+                    closure: {
+                      criteria: "",
+                      approval: "",
+                      approver: "",
+                      date: "",
+                      status: ""
+                    },
+                    documents: [],
+                    comments: []
+                  })
+                }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Yeni CAPA
+                </Button>
+              </DialogTrigger>
+            </Dialog>
           </div>
 
           <Card>
@@ -641,6 +733,178 @@ export default function CAPASystemPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* CAPA Dialog */}
+      <Dialog open={isCAPADialogOpen} onOpenChange={setIsCAPADialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCAPA ? "CAPA Düzenle" : "Yeni CAPA Oluştur"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingCAPA ? "Mevcut CAPA kaydını düzenleyin" : "Yeni bir CAPA kaydı oluşturun"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="capaNumber">CAPA Numarası *</Label>
+                <Input
+                  id="capaNumber"
+                  value={capaFormData.capaNumber}
+                  onChange={(e) => setCapaFormData(prev => ({ ...prev, capaNumber: e.target.value }))}
+                  placeholder="CAPA-2024-001"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="title">Başlık *</Label>
+                <Input
+                  id="title"
+                  value={capaFormData.title}
+                  onChange={(e) => setCapaFormData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="CAPA başlığı"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Açıklama *</Label>
+              <Textarea
+                id="description"
+                value={capaFormData.description}
+                onChange={(e) => setCapaFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="CAPA açıklaması"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Tür *</Label>
+                <Select
+                  value={capaFormData.type}
+                  onValueChange={(value) => setCapaFormData(prev => ({ ...prev, type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tür seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="corrective">Düzeltici</SelectItem>
+                    <SelectItem value="preventive">Önleyici</SelectItem>
+                    <SelectItem value="both">Her İkisi</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="source">Kaynak *</Label>
+                <Select
+                  value={capaFormData.source}
+                  onValueChange={(value) => setCapaFormData(prev => ({ ...prev, source: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Kaynak seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="audit">Denetim</SelectItem>
+                    <SelectItem value="complaint">Şikayet</SelectItem>
+                    <SelectItem value="nonconformity">Uygunsuzluk</SelectItem>
+                    <SelectItem value="management_review">Yönetim Gözden Geçirme</SelectItem>
+                    <SelectItem value="other">Diğer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="priority">Öncelik *</Label>
+                <Select
+                  value={capaFormData.priority}
+                  onValueChange={(value) => setCapaFormData(prev => ({ ...prev, priority: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Öncelik seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Düşük</SelectItem>
+                    <SelectItem value="medium">Orta</SelectItem>
+                    <SelectItem value="high">Yüksek</SelectItem>
+                    <SelectItem value="critical">Kritik</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="owner">Sorumlu *</Label>
+                <Input
+                  id="owner"
+                  value={capaFormData.owner}
+                  onChange={(e) => setCapaFormData(prev => ({ ...prev, owner: e.target.value }))}
+                  placeholder="Sorumlu kişi"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Durum *</Label>
+                <Select
+                  value={capaFormData.status}
+                  onValueChange={(value) => setCapaFormData(prev => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Durum seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Açık</SelectItem>
+                    <SelectItem value="in_progress">Devam Ediyor</SelectItem>
+                    <SelectItem value="completed">Tamamlandı</SelectItem>
+                    <SelectItem value="closed">Kapatıldı</SelectItem>
+                    <SelectItem value="cancelled">İptal Edildi</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="identifiedDate">Tespit Tarihi *</Label>
+                <Input
+                  id="identifiedDate"
+                  type="date"
+                  value={capaFormData.identifiedDate}
+                  onChange={(e) => setCapaFormData(prev => ({ ...prev, identifiedDate: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dueDate">Bitiş Tarihi *</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={capaFormData.dueDate}
+                  onChange={(e) => setCapaFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="completionDate">Tamamlanma Tarihi</Label>
+                <Input
+                  id="completionDate"
+                  type="date"
+                  value={capaFormData.completionDate}
+                  onChange={(e) => setCapaFormData(prev => ({ ...prev, completionDate: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCAPADialogOpen(false)}>
+              İptal
+            </Button>
+            <Button onClick={handleCAPASubmit}>
+              {editingCAPA ? "Güncelle" : "Oluştur"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
