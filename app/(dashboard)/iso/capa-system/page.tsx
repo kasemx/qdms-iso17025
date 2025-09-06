@@ -134,7 +134,12 @@ export default function CAPASystemPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
+  const [priorityFilter, setPriorityFilter] = useState("all")
   const [selectedCAPAs, setSelectedCAPAs] = useState<string[]>([])
+  
+  // View and detail states
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const [viewingCAPA, setViewingCAPA] = useState<CAPA | null>(null)
 
   // Form data
   const [capaFormData, setCapaFormData] = useState({
@@ -361,14 +366,95 @@ export default function CAPASystemPage() {
     }
   }
 
+  const handleViewCAPA = (capa: CAPA) => {
+    setViewingCAPA(capa)
+    setIsViewDialogOpen(true)
+  }
+
+  const handleEditCAPA = (capa: CAPA) => {
+    setEditingCAPA(capa)
+    setCapaFormData({
+      capaNumber: capa.capaNumber,
+      title: capa.title,
+      description: capa.description,
+      type: capa.type,
+      source: capa.source,
+      priority: capa.priority,
+      status: capa.status,
+      owner: capa.owner,
+      identifiedDate: capa.identifiedDate,
+      dueDate: capa.dueDate,
+      completionDate: capa.completionDate,
+      rootCause: capa.rootCause,
+      correctiveActions: capa.correctiveActions,
+      preventiveActions: capa.preventiveActions,
+      verification: capa.verification,
+      effectiveness: capa.effectiveness,
+      closure: capa.closure,
+      documents: capa.documents,
+      comments: capa.comments
+    })
+    setIsCAPADialogOpen(true)
+  }
+
+  const handleDeleteCAPA = async (capaId: string) => {
+    if (window.confirm("Bu CAPA kaydını silmek istediğinizden emin misiniz?")) {
+      try {
+        setCapas(prev => prev.filter(capa => capa.id !== capaId))
+        toast.success("CAPA başarıyla silindi")
+      } catch (error) {
+        console.error("CAPA delete error:", error)
+        toast.error("CAPA silinirken hata oluştu")
+      }
+    }
+  }
+
+  const handleSelectCAPA = (capaId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedCAPAs(prev => [...prev, capaId])
+    } else {
+      setSelectedCAPAs(prev => prev.filter(id => id !== capaId))
+    }
+  }
+
+  const handleSelectAllCAPAs = (checked: boolean) => {
+    if (checked) {
+      setSelectedCAPAs(filteredCAPAs.map(capa => capa.id))
+    } else {
+      setSelectedCAPAs([])
+    }
+  }
+
+  const handleBulkDelete = () => {
+    if (selectedCAPAs.length === 0) {
+      toast.error("Lütfen silinecek CAPA'ları seçin")
+      return
+    }
+    
+    if (window.confirm(`${selectedCAPAs.length} CAPA kaydını silmek istediğinizden emin misiniz?`)) {
+      try {
+        setCapas(prev => prev.filter(capa => !selectedCAPAs.includes(capa.id)))
+        setSelectedCAPAs([])
+        toast.success(`${selectedCAPAs.length} CAPA başarıyla silindi`)
+      } catch (error) {
+        console.error("Bulk delete error:", error)
+        toast.error("CAPA'lar silinirken hata oluştu")
+      }
+    }
+  }
+
   const filteredCAPAs = capas.filter((capa) => {
     const matchesSearch = 
       capa.capaNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       capa.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      capa.description.toLowerCase().includes(searchTerm.toLowerCase())
+      capa.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      capa.owner.toLowerCase().includes(searchTerm.toLowerCase())
+    
     const matchesStatus = statusFilter === "all" || capa.status === statusFilter
     const matchesType = typeFilter === "all" || capa.type === typeFilter
-    return matchesSearch && matchesStatus && matchesType
+    const matchesPriority = priorityFilter === "all" || capa.priority === priorityFilter
+    
+    return matchesSearch && matchesStatus && matchesType && matchesPriority
   })
 
   if (isLoading) {
@@ -492,7 +578,18 @@ export default function CAPASystemPage() {
         <TabsContent value="capas" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">CAPA Listesi</h2>
-            <Dialog open={isCAPADialogOpen} onOpenChange={setIsCAPADialogOpen}>
+            <div className="flex gap-2">
+              {selectedCAPAs.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={handleBulkDelete}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Seçilenleri Sil ({selectedCAPAs.length})
+                </Button>
+              )}
+              <Dialog open={isCAPADialogOpen} onOpenChange={setIsCAPADialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => {
                   setEditingCAPA(null)
@@ -549,7 +646,77 @@ export default function CAPASystemPage() {
                 </Button>
               </DialogTrigger>
             </Dialog>
+            </div>
           </div>
+
+          {/* Search and Filter Section */}
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle>Arama ve Filtreleme</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="search">Arama</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="search"
+                      placeholder="CAPA ara..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="statusFilter">Durum</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Durum seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tümü</SelectItem>
+                      <SelectItem value="open">Açık</SelectItem>
+                      <SelectItem value="in_progress">Devam Ediyor</SelectItem>
+                      <SelectItem value="completed">Tamamlandı</SelectItem>
+                      <SelectItem value="closed">Kapatıldı</SelectItem>
+                      <SelectItem value="cancelled">İptal Edildi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="typeFilter">Tip</Label>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tip seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tümü</SelectItem>
+                      <SelectItem value="corrective">Düzeltici</SelectItem>
+                      <SelectItem value="preventive">Önleyici</SelectItem>
+                      <SelectItem value="both">Her İkisi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="priorityFilter">Öncelik</Label>
+                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Öncelik seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tümü</SelectItem>
+                      <SelectItem value="low">Düşük</SelectItem>
+                      <SelectItem value="medium">Orta</SelectItem>
+                      <SelectItem value="high">Yüksek</SelectItem>
+                      <SelectItem value="critical">Kritik</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -560,6 +727,12 @@ export default function CAPASystemPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedCAPAs.length === filteredCAPAs.length && filteredCAPAs.length > 0}
+                        onCheckedChange={handleSelectAllCAPAs}
+                      />
+                    </TableHead>
                     <TableHead>CAPA No</TableHead>
                     <TableHead>Başlık</TableHead>
                     <TableHead>Tip</TableHead>
@@ -574,6 +747,12 @@ export default function CAPASystemPage() {
                 <TableBody>
                   {filteredCAPAs.map((capa) => (
                     <TableRow key={capa.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedCAPAs.includes(capa.id)}
+                          onCheckedChange={(checked) => handleSelectCAPA(capa.id, checked as boolean)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{capa.capaNumber}</TableCell>
                       <TableCell>
                         <div>
@@ -595,11 +774,30 @@ export default function CAPASystemPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-1">
-                          <Button variant="ghost" size="sm" title="Detayları Görüntüle">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            title="Detayları Görüntüle"
+                            onClick={() => handleViewCAPA(capa)}
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Düzenle">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            title="Düzenle"
+                            onClick={() => handleEditCAPA(capa)}
+                          >
                             <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            title="Sil"
+                            onClick={() => handleDeleteCAPA(capa.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -902,6 +1100,135 @@ export default function CAPASystemPage() {
             <Button onClick={handleCAPASubmit}>
               {editingCAPA ? "Güncelle" : "Oluştur"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CAPA Detail View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>CAPA Detayları</DialogTitle>
+            <DialogDescription>
+              {viewingCAPA?.capaNumber} - {viewingCAPA?.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewingCAPA && (
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-medium">CAPA Numarası</Label>
+                  <p className="text-sm text-muted-foreground">{viewingCAPA.capaNumber}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Durum</Label>
+                  <div>{getStatusBadge(viewingCAPA.status)}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Tip</Label>
+                  <div>{getTypeBadge(viewingCAPA.type)}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Öncelik</Label>
+                  <div>{getPriorityBadge(viewingCAPA.priority)}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Sorumlu</Label>
+                  <p className="text-sm text-muted-foreground">{viewingCAPA.owner}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Kaynak</Label>
+                  <p className="text-sm text-muted-foreground">{viewingCAPA.source}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-medium">Açıklama</Label>
+                <p className="text-sm text-muted-foreground">{viewingCAPA.description}</p>
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-medium">Tespit Tarihi</Label>
+                  <p className="text-sm text-muted-foreground">{viewingCAPA.identifiedDate}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Bitiş Tarihi</Label>
+                  <p className="text-sm text-muted-foreground">{viewingCAPA.dueDate}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Tamamlanma Tarihi</Label>
+                  <p className="text-sm text-muted-foreground">{viewingCAPA.completionDate || "Henüz tamamlanmadı"}</p>
+                </div>
+              </div>
+
+              {/* Root Cause Analysis */}
+              {viewingCAPA.rootCause && (
+                <div className="space-y-2">
+                  <Label className="font-medium">Kök Neden Analizi</Label>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">{viewingCAPA.rootCause.analysis}</p>
+                    <div className="text-xs text-muted-foreground">
+                      <p>Analist: {viewingCAPA.rootCause.analyst}</p>
+                      <p>Tarih: {viewingCAPA.rootCause.date}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Corrective Actions */}
+              {viewingCAPA.correctiveActions && viewingCAPA.correctiveActions.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="font-medium">Düzeltici Aksiyonlar</Label>
+                  <div className="space-y-2">
+                    {viewingCAPA.correctiveActions.map((action, index) => (
+                      <div key={index} className="p-3 bg-muted rounded-lg">
+                        <p className="text-sm font-medium">{action.action}</p>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          <p>Sorumlu: {action.responsible} | Bitiş: {action.dueDate}</p>
+                          <p>Durum: {action.status} | Etkinlik: {action.effectiveness}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Preventive Actions */}
+              {viewingCAPA.preventiveActions && viewingCAPA.preventiveActions.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="font-medium">Önleyici Aksiyonlar</Label>
+                  <div className="space-y-2">
+                    {viewingCAPA.preventiveActions.map((action, index) => (
+                      <div key={index} className="p-3 bg-muted rounded-lg">
+                        <p className="text-sm font-medium">{action.action}</p>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          <p>Sorumlu: {action.responsible} | Bitiş: {action.dueDate}</p>
+                          <p>Durum: {action.status} | Etkinlik: {action.effectiveness}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Kapat
+            </Button>
+            {viewingCAPA && (
+              <Button onClick={() => {
+                setIsViewDialogOpen(false)
+                handleEditCAPA(viewingCAPA)
+              }}>
+                Düzenle
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
