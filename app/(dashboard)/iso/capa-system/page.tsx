@@ -764,7 +764,33 @@ export default function CAPASystemPage() {
                       <TableCell>{getTypeBadge(capa.type)}</TableCell>
                       <TableCell>{capa.source}</TableCell>
                       <TableCell>{getPriorityBadge(capa.priority)}</TableCell>
-                      <TableCell>{getStatusBadge(capa.status)}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={capa.status}
+                          onValueChange={(value) => {
+                            setCapas(prev => prev.map(c => 
+                              c.id === capa.id 
+                                ? { 
+                                    ...c, 
+                                    status: value as 'open' | 'in_progress' | 'completed' | 'cancelled',
+                                    completionDate: value === 'completed' ? new Date().toLocaleDateString('tr-TR') : c.completionDate
+                                  }
+                                : c
+                            ))
+                            toast.success(`CAPA durumu "${value === 'open' ? 'Açık' : value === 'in_progress' ? 'Devam Ediyor' : value === 'completed' ? 'Tamamlandı' : 'İptal Edildi'}" olarak güncellendi`)
+                          }}
+                        >
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="open">Açık</SelectItem>
+                            <SelectItem value="in_progress">Devam Ediyor</SelectItem>
+                            <SelectItem value="completed">Tamamlandı</SelectItem>
+                            <SelectItem value="cancelled">İptal Edildi</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
                       <TableCell>{capa.owner}</TableCell>
                       <TableCell>
                         <div className="text-sm">
