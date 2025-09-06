@@ -60,6 +60,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
+  Calendar,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react"
 import { mockApi } from "@/lib/mock-data"
 import { toast } from "sonner"
@@ -135,6 +138,9 @@ export default function TrainingPlansPage() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
   const [exportFormat, setExportFormat] = useState("excel")
   const [exportRange, setExportRange] = useState("all")
+  const [calendarView, setCalendarView] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [calendarMode, setCalendarMode] = useState<"month" | "week" | "day">("month")
 
   // Durum filtreleri
   const statusFilters = [
@@ -556,6 +562,102 @@ export default function TrainingPlansPage() {
     } else {
       toast.error("İçe aktarılacak geçerli veri bulunamadı")
     }
+  }
+
+  // Calendar Functions
+  const getPlansForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0]
+    return filteredPlans.filter(plan => 
+      plan.startDate === dateStr || 
+      (new Date(plan.startDate) <= date && new Date(plan.endDate) >= date)
+    )
+  }
+
+  const getPlansForMonth = (date: Date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    return filteredPlans.filter(plan => {
+      const planStart = new Date(plan.startDate)
+      const planEnd = new Date(plan.endDate)
+      return (
+        (planStart.getFullYear() === year && planStart.getMonth() === month) ||
+        (planEnd.getFullYear() === year && planEnd.getMonth() === month) ||
+        (planStart <= new Date(year, month, 1) && planEnd >= new Date(year, month + 1, 0))
+      )
+    })
+  }
+
+  const getPlansForWeek = (date: Date) => {
+    const startOfWeek = new Date(date)
+    startOfWeek.setDate(date.getDate() - date.getDay())
+    const endOfWeek = new Date(startOfWeek)
+    endOfWeek.setDate(startOfWeek.getDate() + 6)
+    
+    return filteredPlans.filter(plan => {
+      const planStart = new Date(plan.startDate)
+      const planEnd = new Date(plan.endDate)
+      return (
+        (planStart >= startOfWeek && planStart <= endOfWeek) ||
+        (planEnd >= startOfWeek && planEnd <= endOfWeek) ||
+        (planStart <= startOfWeek && planEnd >= endOfWeek)
+      )
+    })
+  }
+
+  const checkForConflicts = (plan: TrainingPlan) => {
+    const planStart = new Date(plan.startDate)
+    const planEnd = new Date(plan.endDate)
+    
+    return filteredPlans.filter(otherPlan => {
+      if (otherPlan.id === plan.id) return false
+      
+      const otherStart = new Date(otherPlan.startDate)
+      const otherEnd = new Date(otherPlan.endDate)
+      
+      return (
+        (planStart >= otherStart && planStart <= otherEnd) ||
+        (planEnd >= otherStart && planEnd <= otherEnd) ||
+        (planStart <= otherStart && planEnd >= otherEnd)
+      )
+    })
+  }
+
+  const getCalendarDays = (date: Date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const startDate = new Date(firstDay)
+    startDate.setDate(startDate.getDate() - firstDay.getDay())
+    
+    const days = []
+    for (let i = 0; i < 42; i++) {
+      const day = new Date(startDate)
+      day.setDate(startDate.getDate() + i)
+      days.push(day)
+    }
+    return days
+  }
+
+  const getWeekDays = (date: Date) => {
+    const startOfWeek = new Date(date)
+    startOfWeek.setDate(date.getDate() - date.getDay())
+    
+    const days = []
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek)
+      day.setDate(startOfWeek.getDate() + i)
+      days.push(day)
+    }
+    return days
+  }
+
+  const formatCalendarDate = (date: Date) => {
+    return date.toLocaleDateString('tr-TR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
   }
 
   const getStatusIcon = (status: string) => {
@@ -1076,6 +1178,13 @@ export default function TrainingPlansPage() {
                   >
                     <Grid3X3 className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant={calendarView ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCalendarView(!calendarView)}
+                  >
+                    <Calendar className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1189,8 +1298,257 @@ export default function TrainingPlansPage() {
         </CardContent>
       </Card>
 
-      {/* Eğitim Planları Listesi */}
-      <Card>
+      {/* Calendar View */}
+      {calendarView ? (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Takvim Görünümü</CardTitle>
+                <CardDescription>
+                  Eğitim planlarını takvim formatında görüntüleyin
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Select value={calendarMode} onValueChange={(value: "month" | "week" | "day") => setCalendarMode(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="month">Ay</SelectItem>
+                    <SelectItem value="week">Hafta</SelectItem>
+                    <SelectItem value="day">Gün</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedDate(new Date())}
+                >
+                  Bugün
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {calendarMode === "month" && (
+              <div className="space-y-4">
+                {/* Month Header */}
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">
+                    {selectedDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' })}
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Month Calendar */}
+                <div className="grid grid-cols-7 gap-1">
+                  {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(day => (
+                    <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+                      {day}
+                    </div>
+                  ))}
+                  {getCalendarDays(selectedDate).map((day, index) => {
+                    const dayPlans = getPlansForDate(day)
+                    const isCurrentMonth = day.getMonth() === selectedDate.getMonth()
+                    const isToday = day.toDateString() === new Date().toDateString()
+                    
+                    return (
+                      <div
+                        key={index}
+                        className={`min-h-[100px] p-2 border rounded-lg ${
+                          isCurrentMonth ? 'bg-background' : 'bg-muted/50'
+                        } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+                      >
+                        <div className={`text-sm font-medium ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {day.getDate()}
+                        </div>
+                        <div className="space-y-1 mt-1">
+                          {dayPlans.slice(0, 3).map(plan => (
+                            <div
+                              key={plan.id}
+                              className="text-xs p-1 bg-blue-100 text-blue-800 rounded truncate cursor-pointer hover:bg-blue-200"
+                              onClick={() => {
+                                setSelectedPlan(plan)
+                                setIsDetailDialogOpen(true)
+                              }}
+                              title={plan.title}
+                            >
+                              {plan.title}
+                            </div>
+                          ))}
+                          {dayPlans.length > 3 && (
+                            <div className="text-xs text-muted-foreground">
+                              +{dayPlans.length - 3} daha
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {calendarMode === "week" && (
+              <div className="space-y-4">
+                {/* Week Header */}
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">
+                    {formatCalendarDate(getWeekDays(selectedDate)[0])} - {formatCalendarDate(getWeekDays(selectedDate)[6])}
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 7 * 24 * 60 * 60 * 1000))}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 7 * 24 * 60 * 60 * 1000))}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Week Calendar */}
+                <div className="grid grid-cols-7 gap-4">
+                  {getWeekDays(selectedDate).map((day, index) => {
+                    const dayPlans = getPlansForDate(day)
+                    const isToday = day.toDateString() === new Date().toDateString()
+                    
+                    return (
+                      <div key={index} className="space-y-2">
+                        <div className={`text-center font-medium ${isToday ? 'text-blue-600' : 'text-foreground'}`}>
+                          {day.toLocaleDateString('tr-TR', { weekday: 'short' })}
+                          <div className="text-sm">{day.getDate()}</div>
+                        </div>
+                        <div className="space-y-1 min-h-[200px]">
+                          {dayPlans.map(plan => (
+                            <div
+                              key={plan.id}
+                              className="text-xs p-2 bg-blue-100 text-blue-800 rounded cursor-pointer hover:bg-blue-200"
+                              onClick={() => {
+                                setSelectedPlan(plan)
+                                setIsDetailDialogOpen(true)
+                              }}
+                            >
+                              <div className="font-medium truncate">{plan.title}</div>
+                              <div className="text-blue-600">{plan.instructor}</div>
+                              <div className="text-blue-500">{plan.startDate}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {calendarMode === "day" && (
+              <div className="space-y-4">
+                {/* Day Header */}
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">
+                    {formatCalendarDate(selectedDate)}
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 24 * 60 * 60 * 1000))}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000))}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Day Calendar */}
+                <div className="space-y-2">
+                  {getPlansForDate(selectedDate).map(plan => {
+                    const conflicts = checkForConflicts(plan)
+                    return (
+                      <Card key={plan.id} className={`${conflicts.length > 0 ? 'border-red-200 bg-red-50' : ''}`}>
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <h4 className="font-medium">{plan.title}</h4>
+                              <p className="text-sm text-muted-foreground">{plan.instructor}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {plan.startDate} - {plan.endDate}
+                              </p>
+                              {conflicts.length > 0 && (
+                                <div className="text-sm text-red-600">
+                                  ⚠️ {conflicts.length} çakışma tespit edildi
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedPlan(plan)
+                                  setIsDetailDialogOpen(true)
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditPlan(plan)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                  {getPlansForDate(selectedDate).length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>Bu tarihte eğitim planı bulunmuyor</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Eğitim Planları Listesi */}
+          <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
@@ -2140,6 +2498,8 @@ export default function TrainingPlansPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </div>
   )
 }
