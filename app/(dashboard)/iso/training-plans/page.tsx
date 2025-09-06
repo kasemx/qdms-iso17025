@@ -59,6 +59,7 @@ import {
   X,
 } from "lucide-react"
 import { mockApi } from "@/lib/mock-data"
+import { toast } from "sonner"
 
 interface TrainingPlan {
   id: string
@@ -111,6 +112,8 @@ export default function TrainingPlansPage() {
   const [isNewPlanDialogOpen, setIsNewPlanDialogOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<TrainingPlan | null>(null)
   const [deletingPlan, setDeletingPlan] = useState<TrainingPlan | null>(null)
+  const [formData, setFormData] = useState<Partial<TrainingPlan>>({})
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   // Durum filtreleri
   const statusFilters = [
@@ -361,11 +364,15 @@ export default function TrainingPlansPage() {
   // CRUD Fonksiyonları
   const handleNewPlan = () => {
     setEditingPlan(null)
+    setFormData({})
+    setFormErrors({})
     setIsNewPlanDialogOpen(true)
   }
 
   const handleEditPlan = (plan: TrainingPlan) => {
     setEditingPlan(plan)
+    setFormData(plan)
+    setFormErrors({})
     setIsEditDialogOpen(true)
   }
 
@@ -377,15 +384,46 @@ export default function TrainingPlansPage() {
   const confirmDelete = () => {
     if (deletingPlan) {
       setPlans(prev => prev.filter(p => p.id !== deletingPlan.id))
+      toast.success("Eğitim planı başarıyla silindi")
       setDeletingPlan(null)
       setIsDeleteDialogOpen(false)
     }
   }
 
+  // Form Validation
+  const validateForm = (data: Partial<TrainingPlan>) => {
+    const errors: Record<string, string> = {}
+    
+    if (!data.title?.trim()) errors.title = "Başlık zorunludur"
+    if (!data.description?.trim()) errors.description = "Açıklama zorunludur"
+    if (!data.instructor?.trim()) errors.instructor = "Eğitmen zorunludur"
+    if (!data.location?.trim()) errors.location = "Konum zorunludur"
+    if (!data.startDate) errors.startDate = "Başlangıç tarihi zorunludur"
+    if (!data.endDate) errors.endDate = "Bitiş tarihi zorunludur"
+    if (data.startDate && data.endDate && new Date(data.startDate) >= new Date(data.endDate)) {
+      errors.endDate = "Bitiş tarihi başlangıç tarihinden sonra olmalıdır"
+    }
+    if (!data.maxParticipants || data.maxParticipants < 1) errors.maxParticipants = "Maksimum katılımcı sayısı 1'den büyük olmalıdır"
+    if (!data.duration || data.duration < 1) errors.duration = "Süre 1 saatten fazla olmalıdır"
+    if (!data.cost || data.cost < 0) errors.cost = "Maliyet 0'dan küçük olamaz"
+    
+    return errors
+  }
+
   const handleSavePlan = (planData: Partial<TrainingPlan>) => {
+    const errors = validateForm(planData)
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      toast.error("Lütfen tüm zorunlu alanları doldurun")
+      return
+    }
+
+    setFormErrors({})
+    
     if (editingPlan) {
       // Güncelleme
       setPlans(prev => prev.map(p => p.id === editingPlan.id ? { ...p, ...planData } : p))
+      toast.success("Eğitim planı başarıyla güncellendi")
     } else {
       // Yeni ekleme
       const newPlan: TrainingPlan = {
@@ -422,8 +460,10 @@ export default function TrainingPlansPage() {
         notes: planData.notes || "",
       }
       setPlans(prev => [...prev, newPlan])
+      toast.success("Yeni eğitim planı başarıyla oluşturuldu")
     }
     setEditingPlan(null)
+    setFormData({})
     setIsEditDialogOpen(false)
     setIsNewPlanDialogOpen(false)
   }
@@ -971,6 +1011,234 @@ export default function TrainingPlansPage() {
             }}>
               <Edit className="h-4 w-4 mr-2" />
               Düzenle
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Düzenleme Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingPlan ? "Eğitim Planını Düzenle" : "Yeni Eğitim Planı"}
+            </DialogTitle>
+            <DialogDescription>
+              Eğitim planı bilgilerini düzenleyin veya yeni plan oluşturun
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="title">Başlık *</Label>
+                <Input
+                  id="title"
+                  value={formData.title || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className={formErrors.title ? "border-red-500" : ""}
+                />
+                {formErrors.title && <p className="text-sm text-red-500">{formErrors.title}</p>}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="instructor">Eğitmen *</Label>
+                <Input
+                  id="instructor"
+                  value={formData.instructor || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, instructor: e.target.value }))}
+                  className={formErrors.instructor ? "border-red-500" : ""}
+                />
+                {formErrors.instructor && <p className="text-sm text-red-500">{formErrors.instructor}</p>}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Açıklama *</Label>
+              <Textarea
+                id="description"
+                value={formData.description || ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                className={formErrors.description ? "border-red-500" : ""}
+                rows={3}
+              />
+              {formErrors.description && <p className="text-sm text-red-500">{formErrors.description}</p>}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="category">Kategori</Label>
+                <Select
+                  value={formData.category || "technical"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="technical">Teknik</SelectItem>
+                    <SelectItem value="safety">Güvenlik</SelectItem>
+                    <SelectItem value="compliance">Uyumluluk</SelectItem>
+                    <SelectItem value="soft_skills">Yumuşak Beceriler</SelectItem>
+                    <SelectItem value="leadership">Liderlik</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="type">Tür</Label>
+                <Select
+                  value={formData.type || "İç Eğitim"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="İç Eğitim">İç Eğitim</SelectItem>
+                    <SelectItem value="Dış Eğitim">Dış Eğitim</SelectItem>
+                    <SelectItem value="Online Eğitim">Online Eğitim</SelectItem>
+                    <SelectItem value="Sertifikalı Eğitim">Sertifikalı Eğitim</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="level">Seviye</Label>
+                <Select
+                  value={formData.level || "Başlangıç"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, level: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Başlangıç">Başlangıç</SelectItem>
+                    <SelectItem value="Orta">Orta</SelectItem>
+                    <SelectItem value="İleri">İleri</SelectItem>
+                    <SelectItem value="Uzman">Uzman</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Başlangıç Tarihi *</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  className={formErrors.startDate ? "border-red-500" : ""}
+                />
+                {formErrors.startDate && <p className="text-sm text-red-500">{formErrors.startDate}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Bitiş Tarihi *</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={formData.endDate || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                  className={formErrors.endDate ? "border-red-500" : ""}
+                />
+                {formErrors.endDate && <p className="text-sm text-red-500">{formErrors.endDate}</p>}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="duration">Süre (Saat) *</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={formData.duration || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))}
+                  className={formErrors.duration ? "border-red-500" : ""}
+                />
+                {formErrors.duration && <p className="text-sm text-red-500">{formErrors.duration}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="maxParticipants">Maksimum Katılımcı *</Label>
+                <Input
+                  id="maxParticipants"
+                  type="number"
+                  value={formData.maxParticipants || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, maxParticipants: parseInt(e.target.value) || 0 }))}
+                  className={formErrors.maxParticipants ? "border-red-500" : ""}
+                />
+                {formErrors.maxParticipants && <p className="text-sm text-red-500">{formErrors.maxParticipants}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cost">Maliyet (₺) *</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  value={formData.cost || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cost: parseFloat(e.target.value) || 0 }))}
+                  className={formErrors.cost ? "border-red-500" : ""}
+                />
+                {formErrors.cost && <p className="text-sm text-red-500">{formErrors.cost}</p>}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="location">Konum *</Label>
+                <Input
+                  id="location"
+                  value={formData.location || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                  className={formErrors.location ? "border-red-500" : ""}
+                />
+                {formErrors.location && <p className="text-sm text-red-500">{formErrors.location}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="department">Departman</Label>
+                <Input
+                  id="department"
+                  value={formData.department || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="prerequisites">Önkoşullar</Label>
+              <Textarea
+                id="prerequisites"
+                value={formData.prerequisites || ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, prerequisites: e.target.value }))}
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notlar</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes || ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsEditDialogOpen(false)
+              setFormData({})
+              setFormErrors({})
+            }}>
+              İptal
+            </Button>
+            <Button onClick={() => handleSavePlan(formData)}>
+              {editingPlan ? "Güncelle" : "Oluştur"}
             </Button>
           </DialogFooter>
         </DialogContent>
