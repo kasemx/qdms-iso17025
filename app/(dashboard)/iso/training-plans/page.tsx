@@ -196,6 +196,7 @@ export default function TrainingPlansPage() {
 
   const filterPlans = () => {
     let filtered = getRoleBasedPlans()
+    console.log("After role filtering:", filtered.length, "plans")
 
     // Arama filtresi
     if (searchTerm) {
@@ -206,6 +207,7 @@ export default function TrainingPlansPage() {
         plan.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
         plan.category.toLowerCase().includes(searchTerm.toLowerCase())
       )
+      console.log("After search filtering:", filtered.length, "plans")
     }
 
     // Durum filtresi
@@ -295,6 +297,7 @@ export default function TrainingPlansPage() {
       }
     })
 
+    console.log("Final filtered plans:", filtered.length, "plans")
     setFilteredPlans(filtered)
   }
 
@@ -813,17 +816,26 @@ Kalite Yönetim Sistemi
   }
 
   const getRoleBasedPlans = () => {
+    console.log("Current User Role:", currentUser.role)
+    console.log("Total Plans:", plans.length)
+    
     if (currentUser.role === "admin") {
-      return filteredPlans
+      console.log("Admin: Returning all plans")
+      return plans // Admin tüm planları görebilir
     } else if (currentUser.role === "instructor") {
-      return filteredPlans.filter(plan => plan.instructor === currentUser.name)
+      const instructorPlans = plans.filter(plan => plan.instructor === currentUser.name)
+      console.log("Instructor: Returning", instructorPlans.length, "plans")
+      return instructorPlans
     } else if (currentUser.role === "participant") {
-      return filteredPlans.filter(plan => 
+      const participantPlans = plans.filter(plan => 
         plan.participants?.includes(currentUser.name) || 
         plan.currentParticipants > 0
       )
+      console.log("Participant: Returning", participantPlans.length, "plans")
+      return participantPlans
     }
-    return []
+    console.log("Default: Returning all plans")
+    return plans // Varsayılan olarak tüm planları göster
   }
 
   const getRoleDisplayName = (role: string) => {
