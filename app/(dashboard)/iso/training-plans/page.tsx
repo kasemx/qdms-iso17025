@@ -168,6 +168,7 @@ export default function TrainingPlansPage() {
     planId: string
   }>>([])
   const [showUpdateNotification, setShowUpdateNotification] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
 
   // Durum filtreleri
   const statusFilters = [
@@ -1624,263 +1625,193 @@ Kalite Yönetim Sistemi
         </Card>
       </div>
 
-      {/* Filtreler ve Arama */}
+      {/* Arama ve Filtreleme */}
       <Card>
-        <CardHeader>
-          <CardTitle>Eğitim Filtreleme</CardTitle>
-          <CardDescription>Eğitim planlarını durum, kategori ve tarih bazında filtreleyin</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Temel Filtreler */}
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Arama</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Eğitim, eğitmen ara..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchInputChange(e.target.value)}
-                    onFocus={() => setShowSuggestions(searchTerm.length > 0)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                    className="pl-10"
-                  />
-                  
-                  {/* Search Suggestions Dropdown */}
-                  {showSuggestions && (searchSuggestions.length > 0 || searchHistory.length > 0 || popularSearches.length > 0) && (
-                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-80 overflow-y-auto">
-                      {/* Arama Önerileri */}
-                      {searchSuggestions.length > 0 && (
-                        <div className="p-2">
-                          <div className="text-xs font-medium text-gray-500 mb-2 px-2">Öneriler</div>
-                          {searchSuggestions.map((suggestion, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleSuggestionClick(suggestion)}
-                              className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
-                            >
-                              <Search className="h-3 w-3 text-gray-400" />
-                              {suggestion}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Arama Geçmişi */}
-                      {searchHistory.length > 0 && searchSuggestions.length === 0 && (
-                        <div className="p-2 border-t">
-                          <div className="flex items-center justify-between mb-2 px-2">
-                            <div className="text-xs font-medium text-gray-500">Son Aramalar</div>
-                            <button
-                              onClick={clearSearchHistory}
-                              className="text-xs text-red-500 hover:text-red-700"
-                            >
-                              Temizle
-                            </button>
-                          </div>
-                          {searchHistory.slice(0, 5).map((history, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleSuggestionClick(history)}
-                              className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
-                            >
-                              <Clock className="h-3 w-3 text-gray-400" />
-                              {history}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Popüler Aramalar */}
-                      {popularSearches.length > 0 && searchSuggestions.length === 0 && searchHistory.length === 0 && (
-                        <div className="p-2 border-t">
-                          <div className="text-xs font-medium text-gray-500 mb-2 px-2">Popüler Aramalar</div>
-                          {popularSearches.map((popular, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleSuggestionClick(popular)}
-                              className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
-                            >
-                              <TrendingUp className="h-3 w-3 text-gray-400" />
-                              {popular}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Hızlı Filtreler */}
+        <CardContent className="pt-6">
+          {/* Arama ve Kontroller */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
+            {/* Sol: Arama + Filter Toggle */}
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Eğitim, eğitmen ara..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  onFocus={() => setShowSuggestions(searchTerm.length > 0)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  className="pl-10"
+                />
+                
+                {/* Search Suggestions Dropdown */}
+                {showSuggestions && (searchSuggestions.length > 0 || searchHistory.length > 0 || popularSearches.length > 0) && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-80 overflow-y-auto">
+                    {/* Arama Önerileri */}
+                    {searchSuggestions.length > 0 && (
+                      <div className="p-2">
+                        <div className="text-xs font-medium text-gray-500 mb-2 px-2">Öneriler</div>
+                        {searchSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
+                          >
+                            <Search className="h-3 w-3 text-gray-400" />
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Arama Geçmişi */}
+                    {searchHistory.length > 0 && searchSuggestions.length === 0 && (
                       <div className="p-2 border-t">
-                        <div className="text-xs font-medium text-gray-500 mb-2 px-2">Hızlı Filtreler</div>
-                        <div className="grid grid-cols-2 gap-1">
-                          {getQuickFilters().map((filter, index) => (
-                            <button
-                              key={index}
-                              onClick={filter.filter}
-                              className="text-left px-2 py-1 text-xs hover:bg-gray-100 rounded flex items-center gap-1"
-                            >
-                              <Filter className="h-3 w-3 text-gray-400" />
-                              {filter.label}
-                            </button>
-                          ))}
+                        <div className="flex items-center justify-between mb-2 px-2">
+                          <div className="text-xs font-medium text-gray-500">Son Aramalar</div>
+                          <button
+                            onClick={clearSearchHistory}
+                            className="text-xs text-red-500 hover:text-red-700"
+                          >
+                            Temizle
+                          </button>
                         </div>
+                        {searchHistory.slice(0, 5).map((history, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleSuggestionClick(history)}
+                            className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
+                          >
+                            <Clock className="h-3 w-3 text-gray-400" />
+                            {history}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Popüler Aramalar */}
+                    {popularSearches.length > 0 && searchSuggestions.length === 0 && searchHistory.length === 0 && (
+                      <div className="p-2 border-t">
+                        <div className="text-xs font-medium text-gray-500 mb-2 px-2">Popüler Aramalar</div>
+                        {popularSearches.map((popular, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleSuggestionClick(popular)}
+                            className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
+                          >
+                            <TrendingUp className="h-3 w-3 text-gray-400" />
+                            {popular}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Hızlı Filtreler */}
+                    <div className="p-2 border-t">
+                      <div className="text-xs font-medium text-gray-500 mb-2 px-2">Hızlı Filtreler</div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {getQuickFilters().map((filter, index) => (
+                          <button
+                            key={index}
+                            onClick={filter.filter}
+                            className="text-left px-2 py-1 text-xs hover:bg-gray-100 rounded flex items-center gap-1"
+                          >
+                            <Filter className="h-3 w-3 text-gray-400" />
+                            {filter.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Durum</label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Durum seçin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusFilters.map((status) => (
-                      <SelectItem key={status.id} value={status.id}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: status.color }}
-                          />
-                          {status.name} ({status.count})
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Kategori</label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Kategori seçin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoryFilters.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: category.color }}
-                          />
-                          {category.name} ({category.count})
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Görünüm</label>
-                <div className="flex gap-2">
-                  <Button
-                    variant={viewMode === "list" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "grid" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                  >
-                    <Grid3X3 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={calendarView ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCalendarView(!calendarView)}
-                  >
-                    <Calendar className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              
+              {/* Filter Toggle Button */}
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="shrink-0"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtreler
+              </Button>
             </div>
+            
+            {/* Sağ: Görünüm Butonları */}
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={calendarView ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCalendarView(!calendarView)}
+              >
+                <Calendar className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-            {/* Gelişmiş Filtreler */}
-            <div className="border-t pt-4">
-              <h4 className="text-sm font-medium mb-4">Gelişmiş Filtreler</h4>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Filtreleme Alanı - Toggle ile Açılıp Kapanır */}
+          <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            showFilters ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+          }`}>
+            <div className="space-y-6 border-t pt-6">
+              {/* Temel Filtreler */}
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Tarih Aralığı</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="date"
-                      placeholder="Başlangıç"
-                      value={dateRange.start}
-                      onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                    />
-                    <Input
-                      type="date"
-                      placeholder="Bitiş"
-                      value={dateRange.end}
-                      onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Maliyet Aralığı (₺)</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Min"
-                      value={costRange.min}
-                      onChange={(e) => setCostRange(prev => ({ ...prev, min: e.target.value }))}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max"
-                      value={costRange.max}
-                      onChange={(e) => setCostRange(prev => ({ ...prev, max: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Katılımcı Sayısı</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Min"
-                      value={participantRange.min}
-                      onChange={(e) => setParticipantRange(prev => ({ ...prev, min: e.target.value }))}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max"
-                      value={participantRange.max}
-                      onChange={(e) => setParticipantRange(prev => ({ ...prev, max: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Öncelik</label>
-                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <label className="text-sm font-medium">Durum</label>
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Öncelik seçin" />
+                      <SelectValue placeholder="Durum seçin" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tümü</SelectItem>
-                      <SelectItem value="high">Yüksek</SelectItem>
-                      <SelectItem value="medium">Orta</SelectItem>
-                      <SelectItem value="low">Düşük</SelectItem>
+                      {statusFilters.map((status) => (
+                        <SelectItem key={status.id} value={status.id}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: status.color }}
+                            />
+                            {status.name} ({status.count})
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Eğitmen</label>
-                  <Input
-                    placeholder="Eğitmen ara..."
-                    value={instructorFilter}
-                    onChange={(e) => setInstructorFilter(e.target.value)}
-                  />
+                  <label className="text-sm font-medium">Kategori</label>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Kategori seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryFilters.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: category.color }}
+                            />
+                            {category.name} ({category.count})
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Filtreleri Temizle</label>
                   <Button
@@ -1901,6 +1832,90 @@ Kalite Yönetim Sistemi
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Temizle
                   </Button>
+                </div>
+              </div>
+
+              {/* Gelişmiş Filtreler */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-4">Gelişmiş Filtreler</h4>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Tarih Aralığı</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="date"
+                        placeholder="Başlangıç"
+                        value={dateRange.start}
+                        onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                      />
+                      <Input
+                        type="date"
+                        placeholder="Bitiş"
+                        value={dateRange.end}
+                        onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Maliyet Aralığı (₺)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={costRange.min}
+                        onChange={(e) => setCostRange(prev => ({ ...prev, min: e.target.value }))}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={costRange.max}
+                        onChange={(e) => setCostRange(prev => ({ ...prev, max: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Katılımcı Sayısı</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={participantRange.min}
+                        onChange={(e) => setParticipantRange(prev => ({ ...prev, min: e.target.value }))}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={participantRange.max}
+                        onChange={(e) => setParticipantRange(prev => ({ ...prev, max: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Öncelik</label>
+                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Öncelik seçin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tümü</SelectItem>
+                        <SelectItem value="high">Yüksek</SelectItem>
+                        <SelectItem value="medium">Orta</SelectItem>
+                        <SelectItem value="low">Düşük</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Eğitmen</label>
+                    <Input
+                      placeholder="Eğitmen ara..."
+                      value={instructorFilter}
+                      onChange={(e) => setInstructorFilter(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
