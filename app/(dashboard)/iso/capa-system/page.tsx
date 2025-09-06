@@ -765,36 +765,31 @@ export default function CAPASystemPage() {
                       <TableCell>{capa.source}</TableCell>
                       <TableCell>{getPriorityBadge(capa.priority)}</TableCell>
                       <TableCell>
-                        <Select
-                          value={capa.status}
-                          onValueChange={(value) => {
-                            console.log('Status change triggered:', { capaId: capa.id, newStatus: value })
-                            setCapas(prev => {
-                              const updated = prev.map(c => 
-                                c.id === capa.id 
-                                  ? { 
-                                      ...c, 
-                                      status: value as 'open' | 'in_progress' | 'completed' | 'cancelled',
-                                      completionDate: value === 'completed' ? new Date().toLocaleDateString('tr-TR') : c.completionDate
-                                    }
-                                  : c
-                              )
-                              console.log('Updated CAPAs:', updated)
-                              return updated
-                            })
-                            toast.success(`CAPA durumu "${value === 'open' ? 'Açık' : value === 'in_progress' ? 'Devam Ediyor' : value === 'completed' ? 'Tamamlandı' : 'İptal Edildi'}" olarak güncellendi`)
-                          }}
-                        >
-                          <SelectTrigger className="w-[120px]">
-                            <SelectValue placeholder="Durum seçin" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="open">Açık</SelectItem>
-                            <SelectItem value="in_progress">Devam Ediyor</SelectItem>
-                            <SelectItem value="completed">Tamamlandı</SelectItem>
-                            <SelectItem value="cancelled">İptal Edildi</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center space-x-2">
+                          {getStatusBadge(capa.status)}
+                          {capa.status !== 'completed' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setCapas(prev => prev.map(c => 
+                                  c.id === capa.id 
+                                    ? { 
+                                        ...c, 
+                                        status: 'completed' as const,
+                                        completionDate: new Date().toLocaleDateString('tr-TR')
+                                      }
+                                    : c
+                                ))
+                                toast.success("CAPA tamamlandı olarak işaretlendi")
+                              }}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Tamamlandı olarak işaretle"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>{capa.owner}</TableCell>
                       <TableCell>
