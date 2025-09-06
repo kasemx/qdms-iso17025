@@ -76,7 +76,7 @@ interface TrainingPlan {
   maxParticipants: number
   currentParticipants: number
   objectives: string[]
-  prerequisites: string[]
+  prerequisites: string
   materials: string[]
   assessmentMethod: string
   passingScore: number
@@ -404,7 +404,7 @@ export default function TrainingPlansPage() {
         maxParticipants: planData.maxParticipants || 20,
         currentParticipants: 0,
         objectives: planData.objectives || [],
-        prerequisites: planData.prerequisites || [],
+        prerequisites: planData.prerequisites || "",
         materials: planData.materials || [],
         assessmentMethod: planData.assessmentMethod || "Sınav",
         passingScore: planData.passingScore || 70,
@@ -891,11 +891,7 @@ export default function TrainingPlansPage() {
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-medium">Önkoşullar</h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                    {selectedPlan.prerequisites.map((prerequisite, index) => (
-                      <li key={index}>{prerequisite}</li>
-                    ))}
-                  </ul>
+                  <p className="text-sm text-muted-foreground">{selectedPlan.prerequisites}</p>
                 </div>
               </div>
 
