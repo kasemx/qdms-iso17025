@@ -57,6 +57,8 @@ import {
   Pause,
   RotateCcw,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { mockApi } from "@/lib/mock-data"
 import { toast } from "sonner"
@@ -123,6 +125,8 @@ export default function TrainingPlansPage() {
   const [participantRange, setParticipantRange] = useState({ min: "", max: "" })
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [instructorFilter, setInstructorFilter] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   // Durum filtreleri
   const statusFilters = [
@@ -267,6 +271,28 @@ export default function TrainingPlansPage() {
 
     setFilteredPlans(filtered)
   }
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredPlans.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedPlans = filteredPlans.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    setSelectedPlans([]) // Seçimleri temizle
+  }
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage)
+    setCurrentPage(1) // İlk sayfaya dön
+    setSelectedPlans([]) // Seçimleri temizle
+  }
+
+  // Sayfa değiştiğinde seçimleri temizle
+  useEffect(() => {
+    setSelectedPlans([])
+  }, [currentPage, itemsPerPage])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -945,7 +971,7 @@ export default function TrainingPlansPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPlans.map((plan) => {
+                {paginatedPlans.map((plan) => {
                   const daysUntilStart = getDaysUntilStart(plan.startDate)
                   const daysUntilEnd = getDaysUntilEnd(plan.endDate)
                   
@@ -1035,7 +1061,7 @@ export default function TrainingPlansPage() {
             </Table>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredPlans.map((plan) => {
+              {paginatedPlans.map((plan) => {
                 const daysUntilStart = getDaysUntilStart(plan.startDate)
                 const daysUntilEnd = getDaysUntilEnd(plan.endDate)
                 
@@ -1117,6 +1143,82 @@ export default function TrainingPlansPage() {
               })}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Sayfa başına:</label>
+                <Select value={itemsPerPage.toString()} onValueChange={(value) => handleItemsPerPageChange(parseInt(value))}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {startIndex + 1}-{Math.min(endIndex, filteredPlans.length)} / {filteredPlans.length} kayıt
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Önceki
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNumber
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i
+                  } else {
+                    pageNumber = currentPage - 2 + i
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={currentPage === pageNumber ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(pageNumber)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {pageNumber}
+                    </Button>
+                  )
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Sonraki
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
