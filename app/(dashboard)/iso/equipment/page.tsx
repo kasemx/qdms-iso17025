@@ -43,6 +43,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/ui/page-header"
+import { PageSearch } from "@/components/ui/page-search"
 // Lazy load mock data for better performance
 const getMockData = () => import("@/lib/mock-data").then(module => module.mockData)
 
@@ -88,8 +89,11 @@ export default function EquipmentPage() {
   const router = useRouter()
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [calibrationRecords, setCalibrationRecords] = useState<CalibrationRecord[]>([])
+  const [displayedEquipment, setDisplayedEquipment] = useState<Equipment[]>([])
+  const [displayedCalibrationRecords, setDisplayedCalibrationRecords] = useState<CalibrationRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("inventory")
+  const [searchQuery, setSearchQuery] = useState("")
 
   // Dialog states
   const [isEquipmentDialogOpen, setIsEquipmentDialogOpen] = useState(false)
@@ -157,32 +161,33 @@ export default function EquipmentPage() {
       // Lazy load mock data
       const mockData = await getMockData()
       const equipmentData = mockData.equipmentInventory || []
-      setEquipment(
-        equipmentData.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          model: item.model,
-          serialNumber: item.serialNumber,
-          manufacturer: item.manufacturer,
-          location: item.location,
-          status: item.status === "pending" ? "active" : item.status,
-          lastCalibration: item.lastCalibration || "2024-01-01",
-          nextCalibration: item.nextCalibration || "2024-07-01",
-          calibrationInterval: item.calibrationFrequency || "6 ay",
-          responsible: item.responsible,
-          category: item.subCategory?.toLowerCase() || "measurement",
-          purchaseDate: item.purchaseDate,
-          specifications: item.specifications ? JSON.stringify(item.specifications) : "",
-          operatingConditions: item.specifications ? `Sıcaklık: ${item.specifications.temperature}, Nem: ${item.specifications.humidity}` : "",
-          measurementUncertainty: item.specifications?.accuracy || "",
-          referenceStandards: "",
-          maintenanceSchedule: item.maintenance ? JSON.stringify(item.maintenance) : "",
-          operatorAuthorizations: "",
-          environmentalRequirements: item.specifications ? `Sıcaklık: ${item.specifications.temperature}, Nem: ${item.specifications.humidity}` : "",
-          validationStatus: item.condition === "Mükemmel" ? "validated" : "pending",
-          softwareVersion: "",
-        })),
-      )
+      const transformedData = equipmentData.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        model: item.model,
+        serialNumber: item.serialNumber,
+        manufacturer: item.manufacturer,
+        location: item.location,
+        status: item.status === "pending" ? "active" : item.status,
+        lastCalibration: item.lastCalibration || "2024-01-01",
+        nextCalibration: item.nextCalibration || "2024-07-01",
+        calibrationInterval: item.calibrationFrequency || "6 ay",
+        responsible: item.responsible,
+        category: item.subCategory?.toLowerCase() || "measurement",
+        purchaseDate: item.purchaseDate,
+        specifications: item.specifications ? JSON.stringify(item.specifications) : "",
+        operatingConditions: item.specifications ? `Sıcaklık: ${item.specifications.temperature}, Nem: ${item.specifications.humidity}` : "",
+        measurementUncertainty: item.specifications?.accuracy || "",
+        referenceStandards: "",
+        maintenanceSchedule: item.maintenance ? JSON.stringify(item.maintenance) : "",
+        operatorAuthorizations: "",
+        environmentalRequirements: item.specifications ? `Sıcaklık: ${item.specifications.temperature}, Nem: ${item.specifications.humidity}` : "",
+        validationStatus: item.condition === "Mükemmel" ? "validated" : "pending",
+        softwareVersion: "",
+      }))
+      
+      setEquipment(transformedData)
+      setDisplayedEquipment(transformedData)
     } catch (error) {
       console.error("Equipment fetch error:", error)
     }
@@ -193,23 +198,87 @@ export default function EquipmentPage() {
       // Lazy load mock data
       const mockData = await getMockData()
       const calibrationData = mockData.calibrationRecords || []
-      setCalibrationRecords(
-        calibrationData.map((item: any) => ({
-          id: item.id,
-          equipmentId: item.equipmentId,
-          equipmentName: item.equipmentName,
-          calibrationDate: item.calibrationDate,
-          calibratedBy: item.calibratedBy,
-          certificateNumber: item.certificateNumber,
-          nextDueDate: item.nextDueDate,
-          status: item.status,
-          results: item.results,
-          notes: item.notes || "",
-        })),
-      )
+      const transformedData = calibrationData.map((item: any) => ({
+        id: item.id,
+        equipmentId: item.equipmentId,
+        equipmentName: item.equipmentName,
+        calibrationDate: item.calibrationDate,
+        calibratedBy: item.calibratedBy,
+        certificateNumber: item.certificateNumber,
+        nextDueDate: item.nextDueDate,
+        status: item.status,
+        results: item.results,
+        notes: item.notes || "",
+      }))
+      
+      setCalibrationRecords(transformedData)
+      setDisplayedCalibrationRecords(transformedData)
     } catch (error) {
       console.error("Calibration records fetch error:", error)
     }
+  }
+
+  // Search functionality
+  const handleSearch = (query: string, filters: Record<string, any>) => {
+    setSearchQuery(query)
+    
+    let filtered = equipment
+    
+    // Apply text search
+    if (query.trim()) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(query.toLowerCase()) ||
+        item.model.toLowerCase().includes(query.toLowerCase()) ||
+        item.serialNumber.toLowerCase().includes(query.toLowerCase()) ||
+        item.manufacturer.toLowerCase().includes(query.toLowerCase()) ||
+        item.location.toLowerCase().includes(query.toLowerCase()) ||
+        item.category.toLowerCase().includes(query.toLowerCase())
+      )
+    }
+    
+    // Apply filters
+    if (filters.status) {
+      filtered = filtered.filter(item => item.status === filters.status)
+    }
+    
+    if (filters.category) {
+      filtered = filtered.filter(item => item.category === filters.category)
+    }
+    
+    if (filters.location) {
+      filtered = filtered.filter(item => item.location === filters.location)
+    }
+    
+    setDisplayedEquipment(filtered)
+  }
+
+  const handleCalibrationSearch = (query: string, filters: Record<string, any>) => {
+    let filtered = calibrationRecords
+    
+    // Apply text search
+    if (query.trim()) {
+      filtered = filtered.filter(record =>
+        record.equipmentName.toLowerCase().includes(query.toLowerCase()) ||
+        record.certificateNumber.toLowerCase().includes(query.toLowerCase()) ||
+        record.calibratedBy.toLowerCase().includes(query.toLowerCase()) ||
+        record.results.toLowerCase().includes(query.toLowerCase())
+      )
+    }
+    
+    // Apply filters
+    if (filters.status) {
+      filtered = filtered.filter(record => record.status === filters.status)
+    }
+    
+    if (filters.dateFrom) {
+      filtered = filtered.filter(record => new Date(record.calibrationDate) >= new Date(filters.dateFrom))
+    }
+    
+    if (filters.dateTo) {
+      filtered = filtered.filter(record => new Date(record.calibrationDate) <= new Date(filters.dateTo))
+    }
+    
+    setDisplayedCalibrationRecords(filtered)
   }
 
   const handleEditEquipment = (equipment: Equipment) => {
@@ -556,6 +625,65 @@ export default function EquipmentPage() {
         </TabsList>
 
         <TabsContent value="inventory" className="space-y-4">
+          {/* Search Component */}
+          <PageSearch
+            items={equipment.map(item => ({
+              id: item.id,
+              title: item.name,
+              description: `${item.model} - ${item.serialNumber}`,
+              status: item.status,
+              date: item.purchaseDate,
+              metadata: {
+                manufacturer: item.manufacturer,
+                location: item.location,
+                category: item.category,
+                responsible: item.responsible
+              }
+            }))}
+            onSearch={handleSearch}
+            onItemSelect={(item) => {
+              const equipmentItem = equipment.find(e => e.id === item.id)
+              if (equipmentItem) {
+                handleEditEquipment(equipmentItem)
+              }
+            }}
+            filters={[
+              {
+                id: "status",
+                label: "Durum",
+                type: "select",
+                options: [
+                  { value: "active", label: "Aktif" },
+                  { value: "inactive", label: "Pasif" },
+                  { value: "maintenance", label: "Bakımda" },
+                  { value: "calibration", label: "Kalibrasyonda" }
+                ]
+              },
+              {
+                id: "category",
+                label: "Kategori",
+                type: "select",
+                options: [
+                  { value: "measurement", label: "Ölçüm" },
+                  { value: "test", label: "Test" },
+                  { value: "calibration", label: "Kalibrasyon" }
+                ]
+              },
+              {
+                id: "location",
+                label: "Konum",
+                type: "select",
+                options: [
+                  { value: "Laboratuvar A", label: "Laboratuvar A" },
+                  { value: "Laboratuvar B", label: "Laboratuvar B" },
+                  { value: "Depo", label: "Depo" }
+                ]
+              }
+            ]}
+            placeholder="Ekipman ara... (Ctrl+F)"
+            className="mb-4"
+          />
+          
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Ekipman Envanteri</h2>
             <div className="flex gap-2">
@@ -912,7 +1040,7 @@ export default function EquipmentPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEquipment.map((item) => (
+                  {displayedEquipment.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
                         <Checkbox
@@ -993,6 +1121,51 @@ export default function EquipmentPage() {
         </TabsContent>
 
         <TabsContent value="calibration" className="space-y-4">
+          {/* Search Component for Calibration Records */}
+          <PageSearch
+            items={calibrationRecords.map(record => ({
+              id: record.id,
+              title: record.equipmentName,
+              description: `Sertifika: ${record.certificateNumber}`,
+              status: record.status,
+              date: record.calibrationDate,
+              metadata: {
+                calibratedBy: record.calibratedBy,
+                nextDueDate: record.nextDueDate,
+                results: record.results
+              }
+            }))}
+            onSearch={handleCalibrationSearch}
+            onItemSelect={(item) => {
+              // Navigate to calibration record or show details
+              console.log("Selected calibration record:", item)
+            }}
+            filters={[
+              {
+                id: "status",
+                label: "Durum",
+                type: "select",
+                options: [
+                  { value: "valid", label: "Geçerli" },
+                  { value: "expired", label: "Süresi Dolmuş" },
+                  { value: "pending", label: "Beklemede" }
+                ]
+              },
+              {
+                id: "dateFrom",
+                label: "Başlangıç Tarihi",
+                type: "date"
+              },
+              {
+                id: "dateTo",
+                label: "Bitiş Tarihi",
+                type: "date"
+              }
+            ]}
+            placeholder="Kalibrasyon kaydı ara... (Ctrl+F)"
+            className="mb-4"
+          />
+          
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Kalibrasyon Kayıtları</h2>
             <Dialog open={isCalibrationDialogOpen} onOpenChange={setIsCalibrationDialogOpen}>
@@ -1124,7 +1297,7 @@ export default function EquipmentPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCalibrationRecords.map((record) => (
+                  {displayedCalibrationRecords.map((record) => (
                     <TableRow key={record.id}>
                       <TableCell className="font-medium">{record.equipmentName}</TableCell>
                       <TableCell>{new Date(record.calibrationDate).toLocaleDateString("tr-TR")}</TableCell>
