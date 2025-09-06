@@ -296,6 +296,7 @@ export function Sidebar({ className }: SidebarProps) {
             onClick={() => {
               // Reset onboarding to show wizard again
               localStorage.removeItem("qdms-onboarding-completed")
+              localStorage.setItem("qdms-onboarding-show-again", "true")
               window.location.reload()
             }}
           >

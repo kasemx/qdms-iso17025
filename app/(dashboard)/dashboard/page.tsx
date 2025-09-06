@@ -45,7 +45,7 @@ import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard"
 import { useOnboarding } from "@/hooks/use-onboarding"
 
 export default function DashboardPage() {
-  const { showWizard, completeOnboarding, closeWizard } = useOnboarding()
+  const { showWizard, showAgain, completeOnboarding, closeWizard, onShowAgainChange } = useOnboarding()
   const [dashboardData, setDashboardData] = useState({
     documents: { total: 0, pending: 0, approved: 0, revisions: 0 },
     equipment: { total: 0, calibrated: 0, due: 0, critical: 0 },
@@ -182,6 +182,8 @@ export default function DashboardPage() {
         isOpen={showWizard}
         onClose={closeWizard}
         onComplete={completeOnboarding}
+        showAgain={showAgain}
+        onShowAgainChange={onShowAgainChange}
       />
       
       <div className="space-y-6">

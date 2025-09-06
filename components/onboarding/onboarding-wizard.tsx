@@ -48,12 +48,21 @@ interface OnboardingWizardProps {
   isOpen: boolean
   onClose: () => void
   onComplete: () => void
+  showAgain?: boolean
+  onShowAgainChange?: (show: boolean) => void
 }
 
-export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWizardProps) {
+export function OnboardingWizard({ 
+  isOpen, 
+  onClose, 
+  onComplete, 
+  showAgain = true, 
+  onShowAgainChange 
+}: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
   const [skippedSteps, setSkippedSteps] = useState<Set<string>>(new Set())
+  const [dontShowAgain, setDontShowAgain] = useState(false)
 
   const steps: OnboardingStep[] = [
     {
@@ -76,28 +85,28 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card className="text-center">
-              <CardContent className="pt-6">
-                <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <h4 className="font-semibold">Doküman Yönetimi</h4>
-                <p className="text-sm text-muted-foreground">Tüm ISO dokümanlarınızı merkezi olarak yönetin</p>
+              <CardContent className="pt-4 sm:pt-6">
+                <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mx-auto mb-2" />
+                <h4 className="font-semibold text-sm sm:text-base">Doküman Yönetimi</h4>
+                <p className="text-xs sm:text-sm text-muted-foreground">Tüm ISO dokümanlarınızı merkezi olarak yönetin</p>
               </CardContent>
             </Card>
             
             <Card className="text-center">
-              <CardContent className="pt-6">
-                <TestTube className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <h4 className="font-semibold">Test Süreçleri</h4>
-                <p className="text-sm text-muted-foreground">Numune ve test işlemlerini takip edin</p>
+              <CardContent className="pt-4 sm:pt-6">
+                <TestTube className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mx-auto mb-2" />
+                <h4 className="font-semibold text-sm sm:text-base">Test Süreçleri</h4>
+                <p className="text-xs sm:text-sm text-muted-foreground">Numune ve test işlemlerini takip edin</p>
               </CardContent>
             </Card>
             
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <Shield className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <h4 className="font-semibold">Kalite Güvencesi</h4>
-                <p className="text-sm text-muted-foreground">ISO 17025 uyumluluğunu sağlayın</p>
+            <Card className="text-center sm:col-span-2 lg:col-span-1">
+              <CardContent className="pt-4 sm:pt-6">
+                <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mx-auto mb-2" />
+                <h4 className="font-semibold text-sm sm:text-base">Kalite Güvencesi</h4>
+                <p className="text-xs sm:text-sm text-muted-foreground">ISO 17025 uyumluluğunu sağlayın</p>
               </CardContent>
             </Card>
           </div>
@@ -511,6 +520,10 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
 
   const handleNext = () => {
     if (isLastStep) {
+      // Save don't show again preference
+      if (dontShowAgain && onShowAgainChange) {
+        onShowAgainChange(false)
+      }
       onComplete()
     } else {
       setCurrentStep(prev => prev + 1)
@@ -539,7 +552,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-6xl max-h-[95vh] overflow-y-auto sm:w-[90vw] md:w-[85vw] lg:w-[80vw]">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <BookOpen className="w-5 h-5" />
@@ -561,13 +574,13 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
           </div>
 
           {/* Step Navigation */}
-          <div className="flex space-x-2 overflow-x-auto pb-2">
+          <div className="flex space-x-1 sm:space-x-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             {steps.map((step, index) => (
               <button
                 key={step.id}
                 onClick={() => handleStepClick(index)}
                 className={cn(
-                  "flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "flex-shrink-0 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors min-w-fit",
                   index === currentStep
                     ? "bg-blue-100 text-blue-800"
                     : completedSteps.has(step.id)
@@ -577,32 +590,33 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 )}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1 sm:space-x-2">
                   {completedSteps.has(step.id) ? (
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : skippedSteps.has(step.id) ? (
-                    <Skip className="w-4 h-4" />
+                    <Skip className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : (
-                    <step.icon className="w-4 h-4" />
+                    <step.icon className="w-3 h-3 sm:w-4 sm:h-4" />
                   )}
-                  <span className="hidden sm:inline">{step.title}</span>
+                  <span className="hidden xs:inline sm:inline">{step.title}</span>
                 </div>
               </button>
             ))}
           </div>
 
           {/* Step Content */}
-          <div className="min-h-[400px]">
+          <div className="min-h-[300px] sm:min-h-[400px]">
             {currentStepData.content}
           </div>
         </div>
 
-        <DialogFooter className="flex justify-between">
-          <div className="flex space-x-2">
+        <DialogFooter className="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <Button
               variant="outline"
               onClick={handlePrevious}
               disabled={isFirstStep}
+              className="w-full sm:w-auto"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Önceki
@@ -612,6 +626,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
               <Button
                 variant="ghost"
                 onClick={handleSkip}
+                className="w-full sm:w-auto"
               >
                 <Skip className="w-4 h-4 mr-2" />
                 Atla
@@ -619,13 +634,27 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
             )}
           </div>
 
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            {/* Don't Show Again Checkbox */}
+            {showAgain && (
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Checkbox
+                  id="dont-show-again"
+                  checked={dontShowAgain}
+                  onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
+                />
+                <label htmlFor="dont-show-again" className="cursor-pointer">
+                  Bir daha gösterme
+                </label>
+              </div>
+            )}
+            
+            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
               <X className="w-4 h-4 mr-2" />
               Kapat
             </Button>
             
-            <Button onClick={handleNext}>
+            <Button onClick={handleNext} className="w-full sm:w-auto">
               {isLastStep ? (
                 <>
                   <CheckCircle className="w-4 h-4 mr-2" />
