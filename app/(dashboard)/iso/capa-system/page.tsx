@@ -768,20 +768,25 @@ export default function CAPASystemPage() {
                         <Select
                           value={capa.status}
                           onValueChange={(value) => {
-                            setCapas(prev => prev.map(c => 
-                              c.id === capa.id 
-                                ? { 
-                                    ...c, 
-                                    status: value as 'open' | 'in_progress' | 'completed' | 'cancelled',
-                                    completionDate: value === 'completed' ? new Date().toLocaleDateString('tr-TR') : c.completionDate
-                                  }
-                                : c
-                            ))
+                            console.log('Status change triggered:', { capaId: capa.id, newStatus: value })
+                            setCapas(prev => {
+                              const updated = prev.map(c => 
+                                c.id === capa.id 
+                                  ? { 
+                                      ...c, 
+                                      status: value as 'open' | 'in_progress' | 'completed' | 'cancelled',
+                                      completionDate: value === 'completed' ? new Date().toLocaleDateString('tr-TR') : c.completionDate
+                                    }
+                                  : c
+                              )
+                              console.log('Updated CAPAs:', updated)
+                              return updated
+                            })
                             toast.success(`CAPA durumu "${value === 'open' ? 'Açık' : value === 'in_progress' ? 'Devam Ediyor' : value === 'completed' ? 'Tamamlandı' : 'İptal Edildi'}" olarak güncellendi`)
                           }}
                         >
                           <SelectTrigger className="w-[120px]">
-                            <SelectValue />
+                            <SelectValue placeholder="Durum seçin" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="open">Açık</SelectItem>
