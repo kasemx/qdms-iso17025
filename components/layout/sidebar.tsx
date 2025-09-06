@@ -25,6 +25,8 @@ import {
   Scale,
   Zap,
   Activity,
+  AlertTriangle,
+  AlertCircle,
 } from "lucide-react"
 
 const navigation = [
@@ -32,23 +34,41 @@ const navigation = [
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+    status: "active",
   },
   {
     name: "Dokümanlar",
     icon: FileText,
+    status: "active",
     children: [
-      { name: "Doküman Listesi", href: "/documents" },
-      { name: "Doküman Şeması", href: "/documents/schema" },
-      { name: "Yeni Doküman", href: "/documents/create" },
+      { name: "Doküman Listesi", href: "/documents", status: "active" },
+      { name: "Doküman Şeması", href: "/documents/schema", status: "active" },
+      { name: "Yeni Doküman", href: "/documents/create", status: "active" },
     ],
   },
   {
     name: "ISO Yönetim Sistemi",
     icon: Scale,
+    status: "active",
     children: [
-      { name: "Yönetim ve Organizasyon", href: "/iso/management" },
-      { name: "Personel ve Eğitim", href: "/iso/personnel" },
-      { name: "Ekipman ve Kalibrasyon", href: "/iso/equipment" },
+      { name: "Yönetim ve Organizasyon", href: "/iso/management", status: "active" },
+      { name: "Personel ve Eğitim", href: "/iso/personnel", status: "active" },
+      { name: "Ekipman ve Kalibrasyon", href: "/iso/equipment", status: "active" },
+      { name: "Kalibrasyon Programı", href: "/iso/calibration-program", status: "active" },
+      { name: "Kalibrasyon Kayıtları", href: "/iso/calibration-records", status: "active" },
+      { name: "Tarafsızlık Yönetimi", href: "/iso/impartiality", status: "active" },
+      { name: "Gizlilik Anlaşmaları", href: "/iso/confidentiality", status: "active" },
+      { name: "Organizasyon Şeması", href: "/iso/organization", status: "active" },
+      { name: "Personel Yetkinlik", href: "/iso/personnel-competency", status: "active" },
+      { name: "Eğitim Planları", href: "/iso/training-plans", status: "active" },
+      { name: "Numune Yönetimi", href: "/iso/sample-management", status: "active" },
+      { name: "Test Metotları", href: "/iso/test-methods", status: "active" },
+      { name: "Test İşleri", href: "/iso/test-jobs", status: "active" },
+      { name: "Risk Yönetimi", href: "/iso/risk-management", status: "active" },
+      { name: "CAPA Sistemi", href: "/iso/capa-system", status: "active" },
+      { name: "İç Denetim", href: "/iso/internal-audit", status: "active" },
+      { name: "Yeterlilik Testleri", href: "/iso/proficiency-tests", status: "active" },
+      { name: "Müşteri Şikayetleri", href: "/iso/customer-complaints", status: "active" },
     ],
   },
   {
@@ -122,6 +142,36 @@ export function Sidebar({ className }: SidebarProps) {
     setExpandedItems((prev) => (prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]))
   }
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "active":
+        return <CheckCircle className="h-3 w-3 text-green-600" />
+      case "warning":
+        return <AlertTriangle className="h-3 w-3 text-yellow-600" />
+      case "error":
+        return <AlertCircle className="h-3 w-3 text-red-600" />
+      case "pending":
+        return <Clock className="h-3 w-3 text-blue-600" />
+      default:
+        return null
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "text-green-600"
+      case "warning":
+        return "text-yellow-600"
+      case "error":
+        return "text-red-600"
+      case "pending":
+        return "text-blue-600"
+      default:
+        return "text-gray-400"
+    }
+  }
+
   const SidebarContent = () => (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Logo */}
@@ -177,7 +227,14 @@ export function Sidebar({ className }: SidebarProps) {
                             )}
                             asChild
                           >
-                            <Link href={child.href}>{child.name}</Link>
+                            <Link href={child.href} className="flex items-center justify-between w-full">
+                              <span>{child.name}</span>
+                              {child.status && (
+                                <div className="flex items-center space-x-1">
+                                  {getStatusIcon(child.status)}
+                                </div>
+                              )}
+                            </Link>
                           </Button>
                         ))}
                       </div>
@@ -197,14 +254,19 @@ export function Sidebar({ className }: SidebarProps) {
                   )}
                   asChild
                 >
-                  <Link href={item.href}>
-                    <item.icon className="mr-3 h-4 w-4" />
-                    {item.name}
-                    {item.badge && (
-                      <span className="ml-auto rounded-full bg-blue-600 px-2 py-0.5 text-xs text-white">
-                        {item.badge}
-                      </span>
-                    )}
+                  <Link href={item.href} className="flex items-center justify-between w-full">
+                    <div className="flex items-center">
+                      <item.icon className="mr-3 h-4 w-4" />
+                      {item.name}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {item.status && getStatusIcon(item.status)}
+                      {item.badge && (
+                        <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs text-white">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
                   </Link>
                 </Button>
               )
