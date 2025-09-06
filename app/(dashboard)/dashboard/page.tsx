@@ -41,8 +41,11 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { mockApi } from "@/lib/mock-data"
+import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard"
+import { useOnboarding } from "@/hooks/use-onboarding"
 
 export default function DashboardPage() {
+  const { showWizard, completeOnboarding, closeWizard } = useOnboarding()
   const [dashboardData, setDashboardData] = useState({
     documents: { total: 0, pending: 0, approved: 0, revisions: 0 },
     equipment: { total: 0, calibrated: 0, due: 0, critical: 0 },
@@ -174,7 +177,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <OnboardingWizard
+        isOpen={showWizard}
+        onClose={closeWizard}
+        onComplete={completeOnboarding}
+      />
+      
+      <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -951,6 +961,7 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

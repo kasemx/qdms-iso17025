@@ -27,6 +27,7 @@ import {
   Activity,
   AlertTriangle,
   AlertCircle,
+  BookOpen,
 } from "lucide-react"
 
 const navigation = [
@@ -286,14 +287,31 @@ export function Sidebar({ className }: SidebarProps) {
             <p className="text-xs text-gray-500 truncate">admin@company.com</p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-gray-500 hover:text-gray-900 hover:bg-gray-100"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Çıkış Yap
-        </Button>
+        
+        <div className="space-y-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+            onClick={() => {
+              // Reset onboarding to show wizard again
+              localStorage.removeItem("qdms-onboarding-completed")
+              window.location.reload()
+            }}
+          >
+            <BookOpen className="mr-2 h-4 w-4" />
+            Sistem Rehberi
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Çıkış Yap
+          </Button>
+        </div>
       </div>
     </div>
   )
