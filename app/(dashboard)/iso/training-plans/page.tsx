@@ -62,6 +62,8 @@ import {
   Upload,
   ChevronUp,
   ChevronDown,
+  Mail,
+  Send,
 } from "lucide-react"
 import { mockApi } from "@/lib/mock-data"
 import { toast } from "sonner"
@@ -140,6 +142,11 @@ export default function TrainingPlansPage() {
   const [calendarView, setCalendarView] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [calendarMode, setCalendarMode] = useState<"month" | "week" | "day">("month")
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+  const [emailRecipients, setEmailRecipients] = useState<string[]>([])
+  const [emailSubject, setEmailSubject] = useState("")
+  const [emailMessage, setEmailMessage] = useState("")
+  const [emailTemplate, setEmailTemplate] = useState("reminder")
 
   // Durum filtreleri
   const statusFilters = [
@@ -656,6 +663,121 @@ export default function TrainingPlansPage() {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
+    })
+  }
+
+  // Email Notifications Functions
+  const handleEmailNotification = (plan: TrainingPlan, type: string) => {
+    setSelectedPlan(plan)
+    setEmailTemplate(type)
+    setEmailRecipients([])
+    setEmailSubject(getEmailSubject(plan, type))
+    setEmailMessage(getEmailMessage(plan, type))
+    setIsEmailDialogOpen(true)
+  }
+
+  const getEmailSubject = (plan: TrainingPlan, type: string) => {
+    switch (type) {
+      case "reminder":
+        return `Eğitim Hatırlatması: ${plan.title}`
+      case "cancellation":
+        return `Eğitim İptal Edildi: ${plan.title}`
+      case "update":
+        return `Eğitim Güncellendi: ${plan.title}`
+      case "completion":
+        return `Eğitim Tamamlandı: ${plan.title}`
+      default:
+        return `Eğitim Bildirimi: ${plan.title}`
+    }
+  }
+
+  const getEmailMessage = (plan: TrainingPlan, type: string) => {
+    const baseMessage = `
+Merhaba,
+
+${plan.title} eğitimi hakkında bilgilendirme:
+
+📅 Tarih: ${plan.startDate} - ${plan.endDate}
+⏰ Süre: ${plan.duration} saat
+👨‍🏫 Eğitmen: ${plan.instructor}
+📍 Konum: ${plan.location}
+👥 Katılımcı Sayısı: ${plan.currentParticipants}/${plan.maxParticipants}
+💰 Maliyet: ${plan.cost}₺
+
+Detaylar:
+${plan.description}
+
+Önkoşullar: ${plan.prerequisites}
+
+Saygılarımızla,
+Kalite Yönetim Sistemi
+    `.trim()
+
+    switch (type) {
+      case "reminder":
+        return `Eğitim hatırlatması:\n\n${baseMessage}\n\nLütfen eğitim tarihini not alınız.`
+      case "cancellation":
+        return `Eğitim iptal edildi:\n\n${baseMessage}\n\nYeni tarih belirlendiğinde bilgilendirileceksiniz.`
+      case "update":
+        return `Eğitim güncellendi:\n\n${baseMessage}\n\nDeğişiklikleri kontrol ediniz.`
+      case "completion":
+        return `Eğitim tamamlandı:\n\n${baseMessage}\n\nKatılımınız için teşekkür ederiz.`
+      default:
+        return baseMessage
+    }
+  }
+
+  const sendEmail = () => {
+    if (emailRecipients.length === 0) {
+      toast.error("Lütfen en az bir alıcı seçin")
+      return
+    }
+
+    // Email gönderme simülasyonu
+    const emailData = {
+      recipients: emailRecipients,
+      subject: emailSubject,
+      message: emailMessage,
+      plan: selectedPlan,
+      template: emailTemplate,
+      sentAt: new Date().toISOString()
+    }
+
+    console.log("Email gönderildi:", emailData)
+    
+    toast.success(`${emailRecipients.length} kişiye e-posta gönderildi`)
+    setIsEmailDialogOpen(false)
+    setEmailRecipients([])
+    setEmailSubject("")
+    setEmailMessage("")
+  }
+
+  const addEmailRecipient = (email: string) => {
+    if (email && !emailRecipients.includes(email)) {
+      setEmailRecipients(prev => [...prev, email])
+    }
+  }
+
+  const removeEmailRecipient = (email: string) => {
+    setEmailRecipients(prev => prev.filter(e => e !== email))
+  }
+
+  const getUpcomingPlans = () => {
+    const today = new Date()
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+    
+    return filteredPlans.filter(plan => {
+      const planDate = new Date(plan.startDate)
+      return planDate >= today && planDate <= nextWeek && plan.status === "planned"
+    })
+  }
+
+  const getOverduePlans = () => {
+    const today = new Date()
+    
+    return filteredPlans.filter(plan => {
+      const planDate = new Date(plan.startDate)
+      return planDate < today && plan.status === "planned"
     })
   }
 
@@ -1687,6 +1809,14 @@ export default function TrainingPlansPage() {
                           <Button 
                             variant="ghost" 
                             size="sm"
+                            onClick={() => handleEmailNotification(plan, "reminder")}
+                            title="E-posta Gönder"
+                          >
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
                             onClick={() => handleDeletePlan(plan)}
                             title="Sil"
                             className="text-red-600 hover:text-red-700"
@@ -1784,6 +1914,14 @@ export default function TrainingPlansPage() {
                           title="Dosya Yönetimi"
                         >
                           <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEmailNotification(plan, "reminder")}
+                          title="E-posta Gönder"
+                        >
+                          <Mail className="h-4 w-4" />
                         </Button>
                       </div>
                     </CardContent>
@@ -2493,6 +2631,162 @@ export default function TrainingPlansPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
               Kapat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Notifications Dialog */}
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>E-posta Bildirimi Gönder</DialogTitle>
+            <DialogDescription>
+              {selectedPlan?.title} eğitimi için e-posta bildirimi gönderin
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Template Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="emailTemplate">E-posta Şablonu</Label>
+              <Select value={emailTemplate} onValueChange={setEmailTemplate}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="reminder">Hatırlatma</SelectItem>
+                  <SelectItem value="update">Güncelleme</SelectItem>
+                  <SelectItem value="cancellation">İptal</SelectItem>
+                  <SelectItem value="completion">Tamamlama</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Recipients */}
+            <div className="space-y-2">
+              <Label>Alıcılar</Label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="E-posta adresi girin"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        addEmailRecipient(e.currentTarget.value)
+                        e.currentTarget.value = ''
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={(e) => {
+                      const input = e.currentTarget.previousElementSibling as HTMLInputElement
+                      addEmailRecipient(input.value)
+                      input.value = ''
+                    }}
+                  >
+                    Ekle
+                  </Button>
+                </div>
+                {emailRecipients.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {emailRecipients.map((email, index) => (
+                      <div key={index} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                        {email}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeEmailRecipient(email)}
+                          className="h-4 w-4 p-0 text-blue-600 hover:text-blue-800"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Subject */}
+            <div className="space-y-2">
+              <Label htmlFor="emailSubject">Konu</Label>
+              <Input
+                id="emailSubject"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+              />
+            </div>
+
+            {/* Message */}
+            <div className="space-y-2">
+              <Label htmlFor="emailMessage">Mesaj</Label>
+              <Textarea
+                id="emailMessage"
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+                rows={10}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Hızlı İşlemler</h4>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const upcomingPlans = getUpcomingPlans()
+                    if (upcomingPlans.length > 0) {
+                      setEmailRecipients(upcomingPlans.map(plan => plan.instructor))
+                      toast.success(`${upcomingPlans.length} eğitmen eklendi`)
+                    } else {
+                      toast.info("Yaklaşan eğitim bulunamadı")
+                    }
+                  }}
+                >
+                  Yaklaşan Eğitimler
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const overduePlans = getOverduePlans()
+                    if (overduePlans.length > 0) {
+                      setEmailRecipients(overduePlans.map(plan => plan.instructor))
+                      toast.success(`${overduePlans.length} eğitmen eklendi`)
+                    } else {
+                      toast.info("Geciken eğitim bulunamadı")
+                    }
+                  }}
+                >
+                  Geciken Eğitimler
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEmailRecipients(filteredPlans.map(plan => plan.instructor))
+                    toast.success(`${filteredPlans.length} eğitmen eklendi`)
+                  }}
+                >
+                  Tüm Eğitmenler
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
+              İptal
+            </Button>
+            <Button onClick={sendEmail}>
+              <Send className="h-4 w-4 mr-2" />
+              Gönder ({emailRecipients.length})
             </Button>
           </DialogFooter>
         </DialogContent>
