@@ -48,7 +48,7 @@ import {
   UserMinus,
   Building2,
   Network,
-  Hierarchy,
+  TreePine,
   ArrowUp,
   ArrowDown,
   ArrowRight,
@@ -501,7 +501,7 @@ export default function OrganizationPage() {
                   size="sm"
                   onClick={() => setViewMode("hierarchy")}
                 >
-                  <Hierarchy className="h-4 w-4" />
+                  <TreePine className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={viewMode === "list" ? "default" : "outline"}
