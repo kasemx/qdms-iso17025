@@ -59,6 +59,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Upload,
 } from "lucide-react"
 import { mockApi } from "@/lib/mock-data"
 import { toast } from "sonner"
@@ -130,6 +131,10 @@ export default function TrainingPlansPage() {
   const [attachments, setAttachments] = useState<Record<string, File[]>>({})
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false)
   const [selectedPlanForAttachment, setSelectedPlanForAttachment] = useState<TrainingPlan | null>(null)
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+  const [exportFormat, setExportFormat] = useState("excel")
+  const [exportRange, setExportRange] = useState("all")
 
   // Durum filtreleri
   const statusFilters = [
@@ -352,6 +357,205 @@ export default function TrainingPlansPage() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  // Export/Import Functions
+  const handleExport = () => {
+    const dataToExport = exportRange === "all" ? filteredPlans : paginatedPlans
+    
+    if (exportFormat === "excel") {
+      exportToExcel(dataToExport)
+    } else if (exportFormat === "pdf") {
+      exportToPDF(dataToExport)
+    } else if (exportFormat === "csv") {
+      exportToCSV(dataToExport)
+    }
+    
+    setIsExportDialogOpen(false)
+  }
+
+  const exportToExcel = (data: TrainingPlan[]) => {
+    // Excel export simulation
+    const headers = [
+      "Başlık", "Açıklama", "Kategori", "Tür", "Seviye", "Durum",
+      "Başlangıç Tarihi", "Bitiş Tarihi", "Süre (Saat)", "Eğitmen",
+      "Konum", "Maksimum Katılımcı", "Mevcut Katılımcı", "Maliyet",
+      "Departman", "Öncelik", "Oluşturan", "Oluşturma Tarihi"
+    ]
+    
+    const csvContent = [
+      headers.join(","),
+      ...data.map(plan => [
+        `"${plan.title}"`,
+        `"${plan.description}"`,
+        `"${getCategoryText(plan.category)}"`,
+        `"${plan.type}"`,
+        `"${plan.level}"`,
+        `"${getStatusText(plan.status)}"`,
+        `"${plan.startDate}"`,
+        `"${plan.endDate}"`,
+        plan.duration,
+        `"${plan.instructor}"`,
+        `"${plan.location}"`,
+        plan.maxParticipants,
+        plan.currentParticipants,
+        plan.cost,
+        `"${plan.department}"`,
+        `"${plan.priority}"`,
+        `"${plan.createdBy}"`,
+        `"${plan.createdDate}"`
+      ].join(","))
+    ].join("\n")
+    
+    downloadFile(csvContent, "egitim-planlari.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    toast.success("Excel dosyası başarıyla indirildi")
+  }
+
+  const exportToPDF = (data: TrainingPlan[]) => {
+    // PDF export simulation
+    const content = `
+      EĞİTİM PLANLARI RAPORU
+      =====================
+      
+      Toplam Kayıt: ${data.length}
+      Oluşturma Tarihi: ${new Date().toLocaleDateString('tr-TR')}
+      
+      ${data.map((plan, index) => `
+      ${index + 1}. ${plan.title}
+         - Eğitmen: ${plan.instructor}
+         - Tarih: ${plan.startDate} - ${plan.endDate}
+         - Durum: ${getStatusText(plan.status)}
+         - Katılımcı: ${plan.currentParticipants}/${plan.maxParticipants}
+         - Maliyet: ${plan.cost}₺
+      `).join('\n')}
+    `
+    
+    downloadFile(content, "egitim-planlari.pdf", "application/pdf")
+    toast.success("PDF dosyası başarıyla indirildi")
+  }
+
+  const exportToCSV = (data: TrainingPlan[]) => {
+    const headers = [
+      "Başlık", "Açıklama", "Kategori", "Tür", "Seviye", "Durum",
+      "Başlangıç Tarihi", "Bitiş Tarihi", "Süre (Saat)", "Eğitmen",
+      "Konum", "Maksimum Katılımcı", "Mevcut Katılımcı", "Maliyet",
+      "Departman", "Öncelik", "Oluşturan", "Oluşturma Tarihi"
+    ]
+    
+    const csvContent = [
+      headers.join(","),
+      ...data.map(plan => [
+        `"${plan.title}"`,
+        `"${plan.description}"`,
+        `"${getCategoryText(plan.category)}"`,
+        `"${plan.type}"`,
+        `"${plan.level}"`,
+        `"${getStatusText(plan.status)}"`,
+        `"${plan.startDate}"`,
+        `"${plan.endDate}"`,
+        plan.duration,
+        `"${plan.instructor}"`,
+        `"${plan.location}"`,
+        plan.maxParticipants,
+        plan.currentParticipants,
+        plan.cost,
+        `"${plan.department}"`,
+        `"${plan.priority}"`,
+        `"${plan.createdBy}"`,
+        `"${plan.createdDate}"`
+      ].join(","))
+    ].join("\n")
+    
+    downloadFile(csvContent, "egitim-planlari.csv", "text/csv")
+    toast.success("CSV dosyası başarıyla indirildi")
+  }
+
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string
+        if (file.name.endsWith('.csv')) {
+          parseCSVImport(content)
+        } else {
+          toast.error("Sadece CSV dosyaları desteklenmektedir")
+        }
+      } catch (error) {
+        toast.error("Dosya okunurken hata oluştu")
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const parseCSVImport = (content: string) => {
+    const lines = content.split('\n')
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, ''))
+    
+    const importedPlans: TrainingPlan[] = []
+    
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i].trim()) {
+        const values = lines[i].split(',').map(v => v.replace(/"/g, ''))
+        if (values.length >= headers.length) {
+          const newPlan: TrainingPlan = {
+            id: `imported-${Date.now()}-${i}`,
+            title: values[0] || "",
+            description: values[1] || "",
+            category: values[2]?.toLowerCase() || "technical",
+            type: values[3] || "İç Eğitim",
+            level: values[4] || "Başlangıç",
+            duration: parseInt(values[8]) || 8,
+            startDate: values[6] || new Date().toISOString().split('T')[0],
+            endDate: values[7] || new Date().toISOString().split('T')[0],
+            status: values[5]?.toLowerCase() || "planned",
+            instructor: values[9] || "",
+            location: values[10] || "",
+            maxParticipants: parseInt(values[11]) || 20,
+            currentParticipants: parseInt(values[12]) || 0,
+            objectives: [],
+            prerequisites: "",
+            materials: [],
+            assessmentMethod: "Sınav",
+            passingScore: 70,
+            certificateIssued: true,
+            cost: parseFloat(values[13]) || 0,
+            budget: 0,
+            department: values[14] || "",
+            priority: values[15]?.toLowerCase() || "medium",
+            createdBy: values[16] || "İçe Aktarılan",
+            createdDate: values[17] || new Date().toISOString().split('T')[0],
+            lastModified: new Date().toISOString().split('T')[0],
+            completionRate: 0,
+            satisfactionScore: 0,
+            effectivenessScore: 0,
+            notes: "",
+          }
+          importedPlans.push(newPlan)
+        }
+      }
+    }
+    
+    if (importedPlans.length > 0) {
+      setPlans(prev => [...prev, ...importedPlans])
+      toast.success(`${importedPlans.length} eğitim planı başarıyla içe aktarıldı`)
+    } else {
+      toast.error("İçe aktarılacak geçerli veri bulunamadı")
+    }
   }
 
   const getStatusIcon = (status: string) => {
@@ -710,9 +914,21 @@ export default function TrainingPlansPage() {
               </Button>
             </>
           )}
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsExportDialogOpen(true)}
+          >
             <Download className="h-4 w-4 mr-2" />
-            Rapor İndir
+            Dışa Aktar
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsImportDialogOpen(true)}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            İçe Aktar
           </Button>
           <Button size="sm" onClick={handleNewPlan}>
             <Plus className="h-4 w-4 mr-2" />
@@ -1806,6 +2022,119 @@ export default function TrainingPlansPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAttachmentDialogOpen(false)}>
+              Kapat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Dialog */}
+      <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dışa Aktar</DialogTitle>
+            <DialogDescription>
+              Eğitim planlarını farklı formatlarda dışa aktarın
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="exportFormat">Dosya Formatı</Label>
+              <Select value={exportFormat} onValueChange={setExportFormat}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excel">Excel (.xlsx)</SelectItem>
+                  <SelectItem value="pdf">PDF (.pdf)</SelectItem>
+                  <SelectItem value="csv">CSV (.csv)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="exportRange">Aktarılacak Veri</Label>
+              <Select value={exportRange} onValueChange={setExportRange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm Filtrelenmiş Veriler ({filteredPlans.length} kayıt)</SelectItem>
+                  <SelectItem value="current">Mevcut Sayfa ({paginatedPlans.length} kayıt)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">Dışa Aktarılacak Veriler:</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Başlık, Açıklama, Kategori, Tür, Seviye</li>
+                <li>• Durum, Tarihler, Süre, Eğitmen</li>
+                <li>• Konum, Katılımcı Sayıları, Maliyet</li>
+                <li>• Departman, Öncelik, Oluşturan Bilgileri</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>
+              İptal
+            </Button>
+            <Button onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Dışa Aktar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>İçe Aktar</DialogTitle>
+            <DialogDescription>
+              CSV dosyasından eğitim planlarını içe aktarın
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="importFile">CSV Dosyası Seçin</Label>
+              <Input
+                id="importFile"
+                type="file"
+                accept=".csv"
+                onChange={handleImport}
+                className="cursor-pointer"
+              />
+              <p className="text-sm text-muted-foreground">
+                Sadece CSV dosyaları desteklenmektedir
+              </p>
+            </div>
+
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <h4 className="font-medium text-yellow-900 mb-2">CSV Format Gereksinimleri:</h4>
+              <ul className="text-sm text-yellow-800 space-y-1">
+                <li>• İlk satır başlık satırı olmalıdır</li>
+                <li>• Virgül (,) ile ayrılmış değerler</li>
+                <li>• Metin değerleri çift tırnak içinde</li>
+                <li>• Desteklenen sütunlar: Başlık, Açıklama, Kategori, vb.</li>
+              </ul>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h4 className="font-medium text-green-900 mb-2">Örnek CSV Formatı:</h4>
+              <pre className="text-xs text-green-800 bg-white p-2 rounded border overflow-x-auto">
+{`"Başlık","Açıklama","Kategori","Tür","Seviye","Durum"
+"ISO 17025 Eğitimi","Kalite yönetim sistemi eğitimi","compliance","İç Eğitim","Orta","planned"`}
+              </pre>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
               Kapat
             </Button>
           </DialogFooter>
