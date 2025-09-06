@@ -929,6 +929,7 @@ export const mockData = {
       maxParticipants: 20,
       currentParticipants: 15,
       cost: 2500,
+      department: "Kalite Yönetimi",
       objectives: [
         "ISO 17025 standardını anlama",
         "Laboratuvar yeterlilik gereksinimlerini öğrenme",
@@ -986,6 +987,7 @@ export const mockData = {
       maxParticipants: 12,
       currentParticipants: 10,
       cost: 3500,
+      department: "Teknik Hizmetler",
       objectives: [
         "Spektrofotometri tekniklerini öğrenme",
         "Kromatografi uygulamaları",
@@ -1043,6 +1045,7 @@ export const mockData = {
       maxParticipants: 30,
       currentParticipants: 25,
       cost: 1500,
+      department: "İnsan Kaynakları",
       objectives: [
         "Laboratuvar güvenlik kurallarını öğrenme",
         "Kimyasal madde güvenliği",
@@ -1113,6 +1116,7 @@ export const mockData = {
       maxParticipants: 8,
       currentParticipants: 5,
       cost: 4000,
+      department: "İnsan Kaynakları",
       objectives: [
         "Liderlik stillerini öğrenme",
         "Takım yönetimi becerileri",

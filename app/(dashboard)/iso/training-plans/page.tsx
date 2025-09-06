@@ -212,11 +212,11 @@ export default function TrainingPlansPage() {
     // Arama filtresi
     if (searchTerm) {
       filtered = filtered.filter(plan =>
-        plan.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plan.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plan.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plan.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plan.category.toLowerCase().includes(searchTerm.toLowerCase())
+        plan.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        plan.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        plan.instructor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        plan.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        plan.category?.toLowerCase().includes(searchTerm.toLowerCase())
       )
       console.log("After search filtering:", filtered.length, "plans")
     }
@@ -871,16 +871,16 @@ Kalite Yönetim Sistemi
 
     // Eğitim başlıklarından öneriler
     plans.forEach(plan => {
-      if (plan.title.toLowerCase().includes(lowerQuery)) {
+      if (plan.title?.toLowerCase().includes(lowerQuery)) {
         suggestions.push(plan.title)
       }
-      if (plan.instructor.toLowerCase().includes(lowerQuery)) {
+      if (plan.instructor?.toLowerCase().includes(lowerQuery)) {
         suggestions.push(plan.instructor)
       }
-      if (plan.department.toLowerCase().includes(lowerQuery)) {
+      if (plan.department?.toLowerCase().includes(lowerQuery)) {
         suggestions.push(plan.department)
       }
-      if (plan.category.toLowerCase().includes(lowerQuery)) {
+      if (plan.category?.toLowerCase().includes(lowerQuery)) {
         suggestions.push(plan.category)
       }
     })
