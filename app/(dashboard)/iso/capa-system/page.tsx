@@ -48,6 +48,7 @@ import {
   TrendingUp as TrendingUpIcon,
   Wrench,
   ClipboardCheck,
+  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
