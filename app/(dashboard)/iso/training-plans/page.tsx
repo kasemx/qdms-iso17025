@@ -118,6 +118,11 @@ export default function TrainingPlansPage() {
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false)
   const [isBulkStatusDialogOpen, setIsBulkStatusDialogOpen] = useState(false)
   const [bulkStatus, setBulkStatus] = useState("")
+  const [dateRange, setDateRange] = useState({ start: "", end: "" })
+  const [costRange, setCostRange] = useState({ min: "", max: "" })
+  const [participantRange, setParticipantRange] = useState({ min: "", max: "" })
+  const [priorityFilter, setPriorityFilter] = useState("all")
+  const [instructorFilter, setInstructorFilter] = useState("")
 
   // Durum filtreleri
   const statusFilters = [
@@ -145,7 +150,7 @@ export default function TrainingPlansPage() {
 
   useEffect(() => {
     filterPlans()
-  }, [plans, searchTerm, selectedStatus, selectedCategory, sortBy, sortOrder])
+  }, [plans, searchTerm, selectedStatus, selectedCategory, sortBy, sortOrder, dateRange, costRange, participantRange, priorityFilter, instructorFilter])
 
   const fetchData = async () => {
     try {
@@ -181,6 +186,42 @@ export default function TrainingPlansPage() {
     // Kategori filtresi
     if (selectedCategory !== "all") {
       filtered = filtered.filter(plan => plan.category === selectedCategory)
+    }
+
+    // Tarih aralığı filtresi
+    if (dateRange.start) {
+      filtered = filtered.filter(plan => new Date(plan.startDate) >= new Date(dateRange.start))
+    }
+    if (dateRange.end) {
+      filtered = filtered.filter(plan => new Date(plan.startDate) <= new Date(dateRange.end))
+    }
+
+    // Maliyet aralığı filtresi
+    if (costRange.min) {
+      filtered = filtered.filter(plan => plan.cost >= parseFloat(costRange.min))
+    }
+    if (costRange.max) {
+      filtered = filtered.filter(plan => plan.cost <= parseFloat(costRange.max))
+    }
+
+    // Katılımcı aralığı filtresi
+    if (participantRange.min) {
+      filtered = filtered.filter(plan => plan.maxParticipants >= parseInt(participantRange.min))
+    }
+    if (participantRange.max) {
+      filtered = filtered.filter(plan => plan.maxParticipants <= parseInt(participantRange.max))
+    }
+
+    // Öncelik filtresi
+    if (priorityFilter !== "all") {
+      filtered = filtered.filter(plan => plan.priority === priorityFilter)
+    }
+
+    // Eğitmen filtresi
+    if (instructorFilter) {
+      filtered = filtered.filter(plan => 
+        plan.instructor.toLowerCase().includes(instructorFilter.toLowerCase())
+      )
     }
 
     // Sıralama
@@ -659,78 +700,187 @@ export default function TrainingPlansPage() {
           <CardDescription>Eğitim planlarını durum, kategori ve tarih bazında filtreleyin</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Arama</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Eğitim, eğitmen ara..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="space-y-6">
+            {/* Temel Filtreler */}
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Arama</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Eğitim, eğitmen ara..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Durum</label>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Durum seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusFilters.map((status) => (
+                      <SelectItem key={status.id} value={status.id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: status.color }}
+                          />
+                          {status.name} ({status.count})
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Kategori</label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Kategori seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryFilters.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: category.color }}
+                          />
+                          {category.name} ({category.count})
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Görünüm</label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={viewMode === "list" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "grid" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Durum</label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Durum seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusFilters.map((status) => (
-                    <SelectItem key={status.id} value={status.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: status.color }}
-                        />
-                        {status.name} ({status.count})
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Kategori</label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Kategori seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryFilters.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: category.color }}
-                        />
-                        {category.name} ({category.count})
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Görünüm</label>
-              <div className="flex gap-2">
-                <Button
-                  variant={viewMode === "list" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "grid" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                </Button>
+
+            {/* Gelişmiş Filtreler */}
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-medium mb-4">Gelişmiş Filtreler</h4>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Tarih Aralığı</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="date"
+                      placeholder="Başlangıç"
+                      value={dateRange.start}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    />
+                    <Input
+                      type="date"
+                      placeholder="Bitiş"
+                      value={dateRange.end}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Maliyet Aralığı (₺)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={costRange.min}
+                      onChange={(e) => setCostRange(prev => ({ ...prev, min: e.target.value }))}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={costRange.max}
+                      onChange={(e) => setCostRange(prev => ({ ...prev, max: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Katılımcı Sayısı</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={participantRange.min}
+                      onChange={(e) => setParticipantRange(prev => ({ ...prev, min: e.target.value }))}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={participantRange.max}
+                      onChange={(e) => setParticipantRange(prev => ({ ...prev, max: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Öncelik</label>
+                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Öncelik seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tümü</SelectItem>
+                      <SelectItem value="high">Yüksek</SelectItem>
+                      <SelectItem value="medium">Orta</SelectItem>
+                      <SelectItem value="low">Düşük</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Eğitmen</label>
+                  <Input
+                    placeholder="Eğitmen ara..."
+                    value={instructorFilter}
+                    onChange={(e) => setInstructorFilter(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Filtreleri Temizle</label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setDateRange({ start: "", end: "" })
+                      setCostRange({ min: "", max: "" })
+                      setParticipantRange({ min: "", max: "" })
+                      setPriorityFilter("all")
+                      setInstructorFilter("")
+                      setSearchTerm("")
+                      setSelectedStatus("all")
+                      setSelectedCategory("all")
+                    }}
+                    className="w-full"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Temizle
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
