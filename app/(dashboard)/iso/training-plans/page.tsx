@@ -127,6 +127,9 @@ export default function TrainingPlansPage() {
   const [instructorFilter, setInstructorFilter] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [attachments, setAttachments] = useState<Record<string, File[]>>({})
+  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false)
+  const [selectedPlanForAttachment, setSelectedPlanForAttachment] = useState<TrainingPlan | null>(null)
 
   // Durum filtreleri
   const statusFilters = [
@@ -293,6 +296,63 @@ export default function TrainingPlansPage() {
   useEffect(() => {
     setSelectedPlans([])
   }, [currentPage, itemsPerPage])
+
+  // File Attachment Functions
+  const handleFileUpload = (planId: string, files: FileList | null) => {
+    if (!files) return
+    
+    const fileArray = Array.from(files)
+    setAttachments(prev => ({
+      ...prev,
+      [planId]: [...(prev[planId] || []), ...fileArray]
+    }))
+    toast.success(`${fileArray.length} dosya başarıyla yüklendi`)
+  }
+
+  const handleFileRemove = (planId: string, fileIndex: number) => {
+    setAttachments(prev => ({
+      ...prev,
+      [planId]: prev[planId]?.filter((_, index) => index !== fileIndex) || []
+    }))
+    toast.success("Dosya başarıyla silindi")
+  }
+
+  const handleAttachmentDialog = (plan: TrainingPlan) => {
+    setSelectedPlanForAttachment(plan)
+    setIsAttachmentDialogOpen(true)
+  }
+
+  const getFileIcon = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase()
+    switch (extension) {
+      case 'pdf':
+        return <FileText className="h-4 w-4 text-red-500" />
+      case 'doc':
+      case 'docx':
+        return <FileText className="h-4 w-4 text-blue-500" />
+      case 'xls':
+      case 'xlsx':
+        return <FileText className="h-4 w-4 text-green-500" />
+      case 'ppt':
+      case 'pptx':
+        return <FileText className="h-4 w-4 text-orange-500" />
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return <FileText className="h-4 w-4 text-purple-500" />
+      default:
+        return <FileText className="h-4 w-4 text-gray-500" />
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -1046,6 +1106,14 @@ export default function TrainingPlansPage() {
                           <Button 
                             variant="ghost" 
                             size="sm"
+                            onClick={() => handleAttachmentDialog(plan)}
+                            title="Dosya Yönetimi"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
                             onClick={() => handleDeletePlan(plan)}
                             title="Sil"
                             className="text-red-600 hover:text-red-700"
@@ -1135,6 +1203,14 @@ export default function TrainingPlansPage() {
                           title="Düzenle"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleAttachmentDialog(plan)}
+                          title="Dosya Yönetimi"
+                        >
+                          <FileText className="h-4 w-4" />
                         </Button>
                       </div>
                     </CardContent>
@@ -1663,6 +1739,74 @@ export default function TrainingPlansPage() {
             <Button onClick={confirmBulkStatusChange}>
               <Settings className="h-4 w-4 mr-2" />
               Durumu Değiştir ({selectedPlans.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* File Attachment Dialog */}
+      <Dialog open={isAttachmentDialogOpen} onOpenChange={setIsAttachmentDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Dosya Yönetimi</DialogTitle>
+            <DialogDescription>
+              {selectedPlanForAttachment?.title} eğitim planına dosya ekleyin veya yönetin
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* File Upload */}
+            <div className="space-y-2">
+              <Label htmlFor="file-upload">Dosya Yükle</Label>
+              <Input
+                id="file-upload"
+                type="file"
+                multiple
+                onChange={(e) => selectedPlanForAttachment && handleFileUpload(selectedPlanForAttachment.id, e.target.files)}
+                className="cursor-pointer"
+              />
+              <p className="text-sm text-muted-foreground">
+                PDF, DOC, XLS, PPT, JPG, PNG dosyalarını yükleyebilirsiniz (Max: 10MB)
+              </p>
+            </div>
+
+            {/* File List */}
+            <div className="space-y-2">
+              <Label>Yüklenen Dosyalar</Label>
+              {selectedPlanForAttachment && attachments[selectedPlanForAttachment.id]?.length > 0 ? (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {attachments[selectedPlanForAttachment.id].map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {getFileIcon(file.name)}
+                        <div>
+                          <p className="font-medium text-sm">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => selectedPlanForAttachment && handleFileRemove(selectedPlanForAttachment.id, index)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Henüz dosya yüklenmemiş</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAttachmentDialogOpen(false)}>
+              Kapat
             </Button>
           </DialogFooter>
         </DialogContent>
