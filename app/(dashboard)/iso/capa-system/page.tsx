@@ -307,8 +307,28 @@ export default function CAPASystemPage() {
       "Tamamlandı": "bg-green-100 text-green-800",
       "İptal Edildi": "bg-red-100 text-red-800",
       "Beklemede": "bg-gray-100 text-gray-800",
+      // İngilizce durumlar için Türkçe karşılıkları
+      "open": "bg-blue-100 text-blue-800",
+      "in_progress": "bg-yellow-100 text-yellow-800",
+      "completed": "bg-green-100 text-green-800",
+      "cancelled": "bg-red-100 text-red-800",
     }
-    return <Badge className={variants[status] || "bg-gray-100 text-gray-800"}>{status}</Badge>
+    
+    // Durum değerini Türkçe'ye çevir
+    const statusMap: Record<string, string> = {
+      "Planlandı": "Planlandı",
+      "Uygulanıyor": "Uygulanıyor", 
+      "Tamamlandı": "Tamamlandı",
+      "İptal Edildi": "İptal Edildi",
+      "Beklemede": "Beklemede",
+      "open": "Planlandı",
+      "in_progress": "Uygulanıyor",
+      "completed": "Tamamlandı",
+      "cancelled": "İptal Edildi",
+    }
+    
+    const displayStatus = statusMap[status] || status
+    return <Badge className={variants[status] || "bg-gray-100 text-gray-800"}>{displayStatus}</Badge>
   }
 
   const getPriorityBadge = (priority: string) => {
@@ -791,7 +811,7 @@ export default function CAPASystemPage() {
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          {capa.status !== 'completed' && (
+                          {capa.status !== 'completed' && capa.status !== 'Tamamlandı' && (
                             <Button 
                               variant="ghost" 
                               size="sm" 

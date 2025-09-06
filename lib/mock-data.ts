@@ -1534,7 +1534,7 @@ export const mockData = {
       type: "Düzeltici",
       source: "İç Denetim",
               priority: "high",
-      status: "Uygulanıyor",
+      status: "in_progress",
       owner: "Dr. Mehmet Kaya",
       identifiedDate: "2024-01-15",
       dueDate: "2024-04-15",
