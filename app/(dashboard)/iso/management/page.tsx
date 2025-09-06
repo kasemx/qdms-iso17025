@@ -20,8 +20,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Edit, Eye, Building, Shield, Calendar } from "lucide-react"
+import { Plus, Edit, Eye, Building, Shield, Calendar, RefreshCw, Download, Settings } from "lucide-react"
 import { toast } from "sonner"
+import { PageHeader } from "@/components/ui/page-header"
 // Lazy load mock data for better performance
 const getMockData = () => import("@/lib/mock-data").then(module => module.mockData)
 
@@ -399,12 +400,39 @@ export default function ManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">ISO Yönetim Sistemi</h1>
-          <p className="text-muted-foreground">Organizasyon, tarafsızlık, gizlilik ve yönetim gözden geçirme</p>
-        </div>
-      </div>
+      {/* Page Header */}
+      <PageHeader
+        title="ISO Yönetim Sistemi"
+        description="Organizasyon, tarafsızlık, gizlilik ve yönetim gözden geçirme"
+        breadcrumb={[
+          { title: "ISO Yönetim Sistemi", href: "/iso" },
+          { title: "Yönetim ve Organizasyon", icon: Building }
+        ]}
+        status={{
+          label: "Aktif",
+          variant: "default"
+        }}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Yenile
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Dışa Aktar
+            </Button>
+            <Button variant="outline" size="sm">
+              <Settings className="w-4 h-4 mr-2" />
+              Ayarlar
+            </Button>
+            <Button size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Yeni Kayıt
+            </Button>
+          </div>
+        }
+      />
 
       <div className="grid gap-6 md:grid-cols-4">
         <Card>

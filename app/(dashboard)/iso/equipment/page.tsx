@@ -38,8 +38,11 @@ import {
   Bell,
   CalendarDays,
   Trash2,
+  RefreshCw,
+  Settings,
 } from "lucide-react"
 import { toast } from "sonner"
+import { PageHeader } from "@/components/ui/page-header"
 // Lazy load mock data for better performance
 const getMockData = () => import("@/lib/mock-data").then(module => module.mockData)
 
@@ -385,26 +388,47 @@ export default function EquipmentPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Ekipman ve Kalibrasyon</h1>
-          <p className="text-muted-foreground">Ekipman envanteri ve kalibrasyon kayıtları</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowUpcomingCalibrations(!showUpcomingCalibrations)}>
-            <Bell className="w-4 h-4 mr-2" />
-            Yaklaşan Kalibrasyonlar ({upcomingCalibrations.length})
-          </Button>
-          <Button variant="outline" onClick={() => setShowCalendarView(!showCalendarView)}>
-            <CalendarDays className="w-4 h-4 mr-2" />
-            Takvim Görünümü
-          </Button>
-          <Button variant="outline" onClick={exportCalibrationReport}>
-            <Download className="w-4 h-4 mr-2" />
-            Rapor İndir
-          </Button>
-        </div>
-      </div>
+      {/* Page Header */}
+      <PageHeader
+        title="Ekipman ve Kalibrasyon"
+        description="Ekipman envanteri ve kalibrasyon kayıtları"
+        breadcrumb={[
+          { title: "ISO Yönetim Sistemi", href: "/iso" },
+          { title: "Ekipman ve Kalibrasyon", icon: Wrench }
+        ]}
+        status={{
+          label: "Aktif",
+          variant: "default"
+        }}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowUpcomingCalibrations(!showUpcomingCalibrations)}>
+              <Bell className="w-4 h-4 mr-2" />
+              Yaklaşan Kalibrasyonlar ({upcomingCalibrations.length})
+            </Button>
+            <Button variant="outline" onClick={() => setShowCalendarView(!showCalendarView)}>
+              <CalendarDays className="w-4 h-4 mr-2" />
+              Takvim Görünümü
+            </Button>
+            <Button variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Yenile
+            </Button>
+            <Button variant="outline" onClick={exportCalibrationReport}>
+              <Download className="w-4 h-4 mr-2" />
+              Rapor İndir
+            </Button>
+            <Button variant="outline" size="sm">
+              <Settings className="w-4 h-4 mr-2" />
+              Ayarlar
+            </Button>
+            <Button size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Yeni Ekipman
+            </Button>
+          </div>
+        }
+      />
 
       {showUpcomingCalibrations && upcomingCalibrations.length > 0 && (
         <Card className="border-yellow-200 bg-yellow-50">
