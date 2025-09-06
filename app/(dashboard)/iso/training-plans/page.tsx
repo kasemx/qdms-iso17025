@@ -64,6 +64,7 @@ import {
   ChevronDown,
   Mail,
   Send,
+  Bell,
 } from "lucide-react"
 import { mockApi } from "@/lib/mock-data"
 import { toast } from "sonner"
@@ -157,6 +158,16 @@ export default function TrainingPlansPage() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [searchHistory, setSearchHistory] = useState<string[]>([])
   const [popularSearches, setPopularSearches] = useState<string[]>([])
+  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true)
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date())
+  const [updateNotifications, setUpdateNotifications] = useState<Array<{
+    id: string
+    type: 'created' | 'updated' | 'deleted' | 'status_changed'
+    message: string
+    timestamp: Date
+    planId: string
+  }>>([])
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false)
 
   // Durum filtreleri
   const statusFilters = [
@@ -192,6 +203,23 @@ export default function TrainingPlansPage() {
   useEffect(() => {
     filterPlans()
   }, [plans, searchTerm, selectedStatus, selectedCategory, sortBy, sortOrder, dateRange, costRange, participantRange, priorityFilter, instructorFilter, currentUser])
+
+  // Real-time Updates useEffect
+  useEffect(() => {
+    if (!isRealTimeEnabled) return
+
+    const interval = setInterval(() => {
+      checkForUpdates()
+    }, 10000) // Her 10 saniyede bir kontrol et
+
+    return () => clearInterval(interval)
+  }, [isRealTimeEnabled])
+
+  // Real-time Updates için CRUD fonksiyonlarını güncelle
+  useEffect(() => {
+    // CRUD işlemlerinde real-time bildirimleri ekle
+    // Bu useEffect sadece component mount olduğunda çalışır
+  }, [])
 
   const fetchData = async () => {
     try {
@@ -986,6 +1014,103 @@ Kalite Yönetim Sistemi
     ]
   }
 
+  // Real-time Updates Functions
+  const addUpdateNotification = (type: 'created' | 'updated' | 'deleted' | 'status_changed', plan: TrainingPlan, message?: string) => {
+    if (!isRealTimeEnabled) return
+
+    const notification = {
+      id: `update-${Date.now()}-${Math.random()}`,
+      type,
+      message: message || getUpdateMessage(type, plan),
+      timestamp: new Date(),
+      planId: plan.id
+    }
+
+    setUpdateNotifications(prev => [notification, ...prev].slice(0, 10)) // Son 10 bildirim
+    setShowUpdateNotification(true)
+    setLastUpdateTime(new Date())
+
+    // 5 saniye sonra bildirimi gizle
+    setTimeout(() => {
+      setShowUpdateNotification(false)
+    }, 5000)
+  }
+
+  const getUpdateMessage = (type: string, plan: TrainingPlan) => {
+    switch (type) {
+      case 'created':
+        return `Yeni eğitim planı oluşturuldu: ${plan.title}`
+      case 'updated':
+        return `Eğitim planı güncellendi: ${plan.title}`
+      case 'deleted':
+        return `Eğitim planı silindi: ${plan.title}`
+      case 'status_changed':
+        return `Eğitim planı durumu değişti: ${plan.title}`
+      default:
+        return `Eğitim planı güncellendi: ${plan.title}`
+    }
+  }
+
+  const simulateRealTimeUpdate = () => {
+    if (!isRealTimeEnabled) return
+
+    // Rastgele bir güncelleme simüle et
+    const updateTypes = ['created', 'updated', 'status_changed'] as const
+    const randomType = updateTypes[Math.floor(Math.random() * updateTypes.length)]
+    const randomPlan = plans[Math.floor(Math.random() * plans.length)]
+
+    addUpdateNotification(randomType, randomPlan)
+  }
+
+  const checkForUpdates = async () => {
+    if (!isRealTimeEnabled) return
+
+    try {
+      // Gerçek uygulamada burada API'den güncellemeleri kontrol edersiniz
+      // Şimdilik mock data'dan rastgele güncelleme simüle ediyoruz
+      const shouldUpdate = Math.random() > 0.7 // %30 ihtimalle güncelleme
+      
+      if (shouldUpdate) {
+        simulateRealTimeUpdate()
+      }
+    } catch (error) {
+      console.error('Real-time update check failed:', error)
+    }
+  }
+
+  const clearUpdateNotifications = () => {
+    setUpdateNotifications([])
+    setShowUpdateNotification(false)
+  }
+
+  const getUpdateIcon = (type: string) => {
+    switch (type) {
+      case 'created':
+        return <Plus className="h-4 w-4 text-green-500" />
+      case 'updated':
+        return <Edit className="h-4 w-4 text-blue-500" />
+      case 'deleted':
+        return <X className="h-4 w-4 text-red-500" />
+      case 'status_changed':
+        return <CheckCircle className="h-4 w-4 text-yellow-500" />
+      default:
+        return <Activity className="h-4 w-4 text-gray-500" />
+    }
+  }
+
+  const formatUpdateTime = (timestamp: Date) => {
+    const now = new Date()
+    const diff = now.getTime() - timestamp.getTime()
+    const seconds = Math.floor(diff / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+
+    if (seconds < 60) return 'Az önce'
+    if (minutes < 60) return `${minutes} dakika önce`
+    if (hours < 24) return `${hours} saat önce`
+    return timestamp.toLocaleDateString('tr-TR')
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -1146,6 +1271,7 @@ Kalite Yönetim Sistemi
 
   const confirmDelete = () => {
     if (deletingPlan) {
+      addUpdateNotification('deleted', deletingPlan)
       setPlans(prev => prev.filter(p => p.id !== deletingPlan.id))
       toast.success("Eğitim planı başarıyla silindi")
       setDeletingPlan(null)
@@ -1185,7 +1311,9 @@ Kalite Yönetim Sistemi
     
     if (editingPlan) {
       // Güncelleme
-      setPlans(prev => prev.map(p => p.id === editingPlan.id ? { ...p, ...planData } : p))
+      const updatedPlan = { ...editingPlan, ...planData, lastModified: new Date().toISOString() }
+      setPlans(prev => prev.map(p => p.id === editingPlan.id ? updatedPlan : p))
+      addUpdateNotification('updated', updatedPlan)
       toast.success("Eğitim planı başarıyla güncellendi")
     } else {
       // Yeni ekleme
@@ -1223,6 +1351,7 @@ Kalite Yönetim Sistemi
         notes: planData.notes || "",
       }
       setPlans(prev => [...prev, newPlan])
+      addUpdateNotification('created', newPlan)
       toast.success("Yeni eğitim planı başarıyla oluşturuldu")
     }
     setEditingPlan(null)
@@ -1353,6 +1482,33 @@ Kalite Yönetim Sistemi
           </div>
           <div className="text-sm text-muted-foreground">
             {getRoleDisplayName(currentUser.role)}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRealTimeEnabled(!isRealTimeEnabled)}
+              className={isRealTimeEnabled ? "bg-green-100 text-green-800" : ""}
+            >
+              <Activity className="h-4 w-4 mr-2" />
+              {isRealTimeEnabled ? "Gerçek Zamanlı Açık" : "Gerçek Zamanlı Kapalı"}
+            </Button>
+            {updateNotifications.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowUpdateNotification(!showUpdateNotification)}
+                className="relative"
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Güncellemeler ({updateNotifications.length})
+                {updateNotifications.length > 0 && (
+                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs text-white">{updateNotifications.length}</span>
+                  </div>
+                )}
+              </Button>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -3135,6 +3291,68 @@ Kalite Yönetim Sistemi
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Real-time Updates Notifications */}
+      {showUpdateNotification && (
+        <div className="fixed top-4 right-4 z-50 max-w-md">
+          <Card className="border-l-4 border-l-blue-500 shadow-lg">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-blue-500" />
+                  Gerçek Zamanlı Güncellemeler
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowUpdateNotification(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {updateNotifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50"
+                  >
+                    {getUpdateIcon(notification.type)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatUpdateTime(notification.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {updateNotifications.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    Henüz güncelleme yok
+                  </p>
+                )}
+              </div>
+              {updateNotifications.length > 0 && (
+                <div className="flex justify-between items-center mt-4 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearUpdateNotifications}
+                  >
+                    Temizle
+                  </Button>
+                  <div className="text-xs text-gray-500">
+                    Son güncelleme: {lastUpdateTime.toLocaleTimeString('tr-TR')}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
         </>
       )}
     </div>
