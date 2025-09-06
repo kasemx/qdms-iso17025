@@ -764,33 +764,7 @@ export default function CAPASystemPage() {
                       <TableCell>{getTypeBadge(capa.type)}</TableCell>
                       <TableCell>{capa.source}</TableCell>
                       <TableCell>{getPriorityBadge(capa.priority)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {getStatusBadge(capa.status)}
-                          {capa.status !== 'completed' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setCapas(prev => prev.map(c => 
-                                  c.id === capa.id 
-                                    ? { 
-                                        ...c, 
-                                        status: 'completed' as const,
-                                        completionDate: new Date().toLocaleDateString('tr-TR')
-                                      }
-                                    : c
-                                ))
-                                toast.success("CAPA tamamlandı olarak işaretlendi")
-                              }}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              title="Tamamlandı olarak işaretle"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+                      <TableCell>{getStatusBadge(capa.status)}</TableCell>
                       <TableCell>{capa.owner}</TableCell>
                       <TableCell>
                         <div className="text-sm">
@@ -817,6 +791,28 @@ export default function CAPASystemPage() {
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
+                          {capa.status !== 'completed' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              title="Tamamlandı olarak işaretle"
+                              onClick={() => {
+                                setCapas(prev => prev.map(c => 
+                                  c.id === capa.id 
+                                    ? { 
+                                        ...c, 
+                                        status: 'completed' as const,
+                                        completionDate: new Date().toLocaleDateString('tr-TR')
+                                      }
+                                    : c
+                                ))
+                                toast.success("CAPA tamamlandı olarak işaretlendi")
+                              }}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm" 
