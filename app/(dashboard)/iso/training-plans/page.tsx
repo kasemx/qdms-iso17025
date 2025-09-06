@@ -153,6 +153,10 @@ export default function TrainingPlansPage() {
     role: "admin",
     permissions: ["read", "write", "delete", "export", "email"]
   })
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searchHistory, setSearchHistory] = useState<string[]>([])
+  const [popularSearches, setPopularSearches] = useState<string[]>([])
 
   // Durum filtreleri
   const statusFilters = [
@@ -176,6 +180,13 @@ export default function TrainingPlansPage() {
 
   useEffect(() => {
     fetchData()
+    // Search history'yi localStorage'dan yükle
+    const savedHistory = localStorage.getItem('training-search-history')
+    if (savedHistory) {
+      setSearchHistory(JSON.parse(savedHistory))
+    }
+    // Popüler aramaları hesapla
+    setPopularSearches(getPopularSearches())
   }, [])
 
   useEffect(() => {
@@ -848,6 +859,133 @@ Kalite Yönetim Sistemi
     }
   }
 
+  // Search Suggestions Functions
+  const generateSearchSuggestions = (query: string) => {
+    if (!query || query.length < 2) {
+      setSearchSuggestions([])
+      return
+    }
+
+    const suggestions: string[] = []
+    const lowerQuery = query.toLowerCase()
+
+    // Eğitim başlıklarından öneriler
+    plans.forEach(plan => {
+      if (plan.title.toLowerCase().includes(lowerQuery)) {
+        suggestions.push(plan.title)
+      }
+      if (plan.instructor.toLowerCase().includes(lowerQuery)) {
+        suggestions.push(plan.instructor)
+      }
+      if (plan.department.toLowerCase().includes(lowerQuery)) {
+        suggestions.push(plan.department)
+      }
+      if (plan.category.toLowerCase().includes(lowerQuery)) {
+        suggestions.push(plan.category)
+      }
+    })
+
+    // Popüler aramalar
+    const popularMatches = popularSearches.filter(search => 
+      search.toLowerCase().includes(lowerQuery)
+    )
+
+    // Arama geçmişi
+    const historyMatches = searchHistory.filter(search => 
+      search.toLowerCase().includes(lowerQuery)
+    )
+
+    // Önerileri birleştir ve tekrarları kaldır
+    const allSuggestions = [
+      ...suggestions,
+      ...popularMatches,
+      ...historyMatches
+    ].filter((value, index, self) => self.indexOf(value) === index)
+
+    setSearchSuggestions(allSuggestions.slice(0, 8)) // En fazla 8 öneri
+  }
+
+  const handleSearchInputChange = (value: string) => {
+    setSearchTerm(value)
+    generateSearchSuggestions(value)
+    setShowSuggestions(value.length > 0)
+  }
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchTerm(suggestion)
+    setShowSuggestions(false)
+    addToSearchHistory(suggestion)
+  }
+
+  const addToSearchHistory = (searchTerm: string) => {
+    if (searchTerm.trim() && !searchHistory.includes(searchTerm)) {
+      const newHistory = [searchTerm, ...searchHistory].slice(0, 10) // Son 10 arama
+      setSearchHistory(newHistory)
+      localStorage.setItem('training-search-history', JSON.stringify(newHistory))
+    }
+  }
+
+  const clearSearchHistory = () => {
+    setSearchHistory([])
+    localStorage.removeItem('training-search-history')
+  }
+
+  const getPopularSearches = () => {
+    // Popüler aramaları hesapla
+    const searchCounts: Record<string, number> = {}
+    
+    // Mock data'dan popüler terimler
+    const popularTerms = [
+      "kalite", "güvenlik", "teknik", "yönetim", "eğitim",
+      "kalibrasyon", "test", "analiz", "rapor", "sertifika"
+    ]
+
+    popularTerms.forEach(term => {
+      const count = plans.filter(plan => 
+        plan.title.toLowerCase().includes(term) ||
+        plan.description.toLowerCase().includes(term) ||
+        plan.category.toLowerCase().includes(term)
+      ).length
+      searchCounts[term] = count
+    })
+
+    return Object.entries(searchCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([term]) => term)
+  }
+
+  const getQuickFilters = () => {
+    return [
+      { label: "Bu Hafta", filter: () => {
+        const today = new Date()
+        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+        setDateRange({
+          start: today.toISOString().split('T')[0],
+          end: nextWeek.toISOString().split('T')[0]
+        })
+        setShowSuggestions(false)
+      }},
+      { label: "Bu Ay", filter: () => {
+        const today = new Date()
+        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate())
+        setDateRange({
+          start: today.toISOString().split('T')[0],
+          end: nextMonth.toISOString().split('T')[0]
+        })
+        setShowSuggestions(false)
+      }},
+      { label: "Yüksek Öncelik", filter: () => {
+        setPriorityFilter("high")
+        setShowSuggestions(false)
+      }},
+      { label: "Tamamlanan", filter: () => {
+        setSelectedStatus("completed")
+        setShowSuggestions(false)
+      }}
+    ]
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -1342,9 +1480,92 @@ Kalite Yönetim Sistemi
                   <Input
                     placeholder="Eğitim, eğitmen ara..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
+                    onFocus={() => setShowSuggestions(searchTerm.length > 0)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     className="pl-10"
                   />
+                  
+                  {/* Search Suggestions Dropdown */}
+                  {showSuggestions && (searchSuggestions.length > 0 || searchHistory.length > 0 || popularSearches.length > 0) && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-80 overflow-y-auto">
+                      {/* Arama Önerileri */}
+                      {searchSuggestions.length > 0 && (
+                        <div className="p-2">
+                          <div className="text-xs font-medium text-gray-500 mb-2 px-2">Öneriler</div>
+                          {searchSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
+                            >
+                              <Search className="h-3 w-3 text-gray-400" />
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Arama Geçmişi */}
+                      {searchHistory.length > 0 && searchSuggestions.length === 0 && (
+                        <div className="p-2 border-t">
+                          <div className="flex items-center justify-between mb-2 px-2">
+                            <div className="text-xs font-medium text-gray-500">Son Aramalar</div>
+                            <button
+                              onClick={clearSearchHistory}
+                              className="text-xs text-red-500 hover:text-red-700"
+                            >
+                              Temizle
+                            </button>
+                          </div>
+                          {searchHistory.slice(0, 5).map((history, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleSuggestionClick(history)}
+                              className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
+                            >
+                              <Clock className="h-3 w-3 text-gray-400" />
+                              {history}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Popüler Aramalar */}
+                      {popularSearches.length > 0 && searchSuggestions.length === 0 && searchHistory.length === 0 && (
+                        <div className="p-2 border-t">
+                          <div className="text-xs font-medium text-gray-500 mb-2 px-2">Popüler Aramalar</div>
+                          {popularSearches.map((popular, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleSuggestionClick(popular)}
+                              className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
+                            >
+                              <TrendingUp className="h-3 w-3 text-gray-400" />
+                              {popular}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Hızlı Filtreler */}
+                      <div className="p-2 border-t">
+                        <div className="text-xs font-medium text-gray-500 mb-2 px-2">Hızlı Filtreler</div>
+                        <div className="grid grid-cols-2 gap-1">
+                          {getQuickFilters().map((filter, index) => (
+                            <button
+                              key={index}
+                              onClick={filter.filter}
+                              className="text-left px-2 py-1 text-xs hover:bg-gray-100 rounded flex items-center gap-1"
+                            >
+                              <Filter className="h-3 w-3 text-gray-400" />
+                              {filter.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
