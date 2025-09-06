@@ -1016,14 +1016,14 @@ Kalite Yönetim Sistemi
 
   // Real-time Updates Functions
   const addUpdateNotification = (type: 'created' | 'updated' | 'deleted' | 'status_changed', plan: TrainingPlan, message?: string) => {
-    if (!isRealTimeEnabled) return
+    if (!isRealTimeEnabled || !plan) return
 
     const notification = {
       id: `update-${Date.now()}-${Math.random()}`,
       type,
       message: message || getUpdateMessage(type, plan),
       timestamp: new Date(),
-      planId: plan.id
+      planId: plan.id || 'unknown'
     }
 
     setUpdateNotifications(prev => [notification, ...prev].slice(0, 10)) // Son 10 bildirim
@@ -1037,33 +1037,38 @@ Kalite Yönetim Sistemi
   }
 
   const getUpdateMessage = (type: string, plan: TrainingPlan) => {
+    const planTitle = plan?.title || 'Bilinmeyen Plan'
+    
     switch (type) {
       case 'created':
-        return `Yeni eğitim planı oluşturuldu: ${plan.title}`
+        return `Yeni eğitim planı oluşturuldu: ${planTitle}`
       case 'updated':
-        return `Eğitim planı güncellendi: ${plan.title}`
+        return `Eğitim planı güncellendi: ${planTitle}`
       case 'deleted':
-        return `Eğitim planı silindi: ${plan.title}`
+        return `Eğitim planı silindi: ${planTitle}`
       case 'status_changed':
-        return `Eğitim planı durumu değişti: ${plan.title}`
+        return `Eğitim planı durumu değişti: ${planTitle}`
       default:
-        return `Eğitim planı güncellendi: ${plan.title}`
+        return `Eğitim planı güncellendi: ${planTitle}`
     }
   }
 
   const simulateRealTimeUpdate = () => {
-    if (!isRealTimeEnabled) return
+    if (!isRealTimeEnabled || !plans || plans.length === 0) return
 
     // Rastgele bir güncelleme simüle et
     const updateTypes = ['created', 'updated', 'status_changed'] as const
     const randomType = updateTypes[Math.floor(Math.random() * updateTypes.length)]
     const randomPlan = plans[Math.floor(Math.random() * plans.length)]
 
-    addUpdateNotification(randomType, randomPlan)
+    // Plan'ın geçerli olduğundan emin ol
+    if (randomPlan && randomPlan.title) {
+      addUpdateNotification(randomType, randomPlan)
+    }
   }
 
   const checkForUpdates = async () => {
-    if (!isRealTimeEnabled) return
+    if (!isRealTimeEnabled || !plans || plans.length === 0) return
 
     try {
       // Gerçek uygulamada burada API'den güncellemeleri kontrol edersiniz
