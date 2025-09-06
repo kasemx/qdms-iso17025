@@ -147,6 +147,12 @@ export default function TrainingPlansPage() {
   const [emailSubject, setEmailSubject] = useState("")
   const [emailMessage, setEmailMessage] = useState("")
   const [emailTemplate, setEmailTemplate] = useState("reminder")
+  const [currentUser, setCurrentUser] = useState({
+    id: "user-1",
+    name: "Admin User",
+    role: "admin",
+    permissions: ["read", "write", "delete", "export", "email"]
+  })
 
   // Durum filtreleri
   const statusFilters = [
@@ -174,7 +180,7 @@ export default function TrainingPlansPage() {
 
   useEffect(() => {
     filterPlans()
-  }, [plans, searchTerm, selectedStatus, selectedCategory, sortBy, sortOrder, dateRange, costRange, participantRange, priorityFilter, instructorFilter])
+  }, [plans, searchTerm, selectedStatus, selectedCategory, sortBy, sortOrder, dateRange, costRange, participantRange, priorityFilter, instructorFilter, currentUser])
 
   const fetchData = async () => {
     try {
@@ -189,7 +195,7 @@ export default function TrainingPlansPage() {
   }
 
   const filterPlans = () => {
-    let filtered = [...plans]
+    let filtered = getRoleBasedPlans()
 
     // Arama filtresi
     if (searchTerm) {
@@ -781,6 +787,55 @@ Kalite Yönetim Sistemi
     })
   }
 
+  // Role-based Access Functions
+  const hasPermission = (permission: string) => {
+    return currentUser.permissions.includes(permission)
+  }
+
+  const canEdit = (plan: TrainingPlan) => {
+    if (hasPermission("write")) return true
+    if (currentUser.role === "instructor" && plan.instructor === currentUser.name) return true
+    return false
+  }
+
+  const canDelete = (plan: TrainingPlan) => {
+    if (hasPermission("delete")) return true
+    if (currentUser.role === "instructor" && plan.instructor === currentUser.name) return true
+    return false
+  }
+
+  const canExport = () => {
+    return hasPermission("export")
+  }
+
+  const canSendEmail = () => {
+    return hasPermission("email")
+  }
+
+  const getRoleBasedPlans = () => {
+    if (currentUser.role === "admin") {
+      return filteredPlans
+    } else if (currentUser.role === "instructor") {
+      return filteredPlans.filter(plan => plan.instructor === currentUser.name)
+    } else if (currentUser.role === "participant") {
+      return filteredPlans.filter(plan => 
+        plan.participants?.includes(currentUser.name) || 
+        plan.currentParticipants > 0
+      )
+    }
+    return []
+  }
+
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case "admin": return "Yönetici"
+      case "instructor": return "Eğitmen"
+      case "participant": return "Katılımcı"
+      case "viewer": return "Görüntüleyici"
+      default: return "Kullanıcı"
+    }
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -1116,8 +1171,42 @@ Kalite Yönetim Sistemi
           <h1 className="text-3xl font-bold text-foreground">Eğitim Planları</h1>
           <p className="text-muted-foreground">Personel eğitim planlaması ve takibi</p>
         </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="userRole">Kullanıcı Rolü:</Label>
+            <Select 
+              value={currentUser.role} 
+              onValueChange={(role) => {
+                const rolePermissions = {
+                  admin: ["read", "write", "delete", "export", "email"],
+                  instructor: ["read", "write", "email"],
+                  participant: ["read"],
+                  viewer: ["read"]
+                }
+                setCurrentUser(prev => ({
+                  ...prev,
+                  role,
+                  permissions: rolePermissions[role as keyof typeof rolePermissions] || []
+                }))
+              }}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Yönetici</SelectItem>
+                <SelectItem value="instructor">Eğitmen</SelectItem>
+                <SelectItem value="participant">Katılımcı</SelectItem>
+                <SelectItem value="viewer">Görüntüleyici</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {getRoleDisplayName(currentUser.role)}
+          </div>
+        </div>
         <div className="flex gap-2">
-          {selectedPlans.length > 0 && (
+          {selectedPlans.length > 0 && hasPermission("delete") && (
             <>
               <Button 
                 variant="outline" 
@@ -1137,26 +1226,32 @@ Kalite Yönetim Sistemi
               </Button>
             </>
           )}
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setIsExportDialogOpen(true)}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Dışa Aktar
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setIsImportDialogOpen(true)}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            İçe Aktar
-          </Button>
-          <Button size="sm" onClick={handleNewPlan}>
-            <Plus className="h-4 w-4 mr-2" />
-            Yeni Plan
-          </Button>
+          {canExport() && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsExportDialogOpen(true)}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Dışa Aktar
+            </Button>
+          )}
+          {hasPermission("write") && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsImportDialogOpen(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              İçe Aktar
+            </Button>
+          )}
+          {hasPermission("write") && (
+            <Button size="sm" onClick={handleNewPlan}>
+              <Plus className="h-4 w-4 mr-2" />
+              Yeni Plan
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1642,13 +1737,15 @@ Kalite Yönetim Sistemi
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditPlan(plan)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                              {canEdit(plan) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditPlan(plan)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </CardContent>
@@ -1709,12 +1806,14 @@ Kalite Yönetim Sistemi
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
-                    <Checkbox
-                      checked={selectedPlans.length === filteredPlans.length && filteredPlans.length > 0}
-                      onCheckedChange={handleSelectAllPlans}
-                    />
-                  </TableHead>
+                  {hasPermission("delete") && (
+                    <TableHead>
+                      <Checkbox
+                        checked={selectedPlans.length === filteredPlans.length && filteredPlans.length > 0}
+                        onCheckedChange={handleSelectAllPlans}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Eğitim</TableHead>
                   <TableHead>Kategori</TableHead>
                   <TableHead>Durum</TableHead>
@@ -1732,12 +1831,14 @@ Kalite Yönetim Sistemi
                   
                   return (
                     <TableRow key={plan.id}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedPlans.includes(plan.id)}
-                          onCheckedChange={(checked) => handleSelectPlan(plan.id, checked as boolean)}
-                        />
-                      </TableCell>
+                      {hasPermission("delete") && (
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedPlans.includes(plan.id)}
+                            onCheckedChange={(checked) => handleSelectPlan(plan.id, checked as boolean)}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{plan.title}</div>
@@ -1790,14 +1891,16 @@ Kalite Yönetim Sistemi
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditPlan(plan)}
-                            title="Düzenle"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          {canEdit(plan) && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditPlan(plan)}
+                              title="Düzenle"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm"
@@ -1806,23 +1909,27 @@ Kalite Yönetim Sistemi
                           >
                             <FileText className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEmailNotification(plan, "reminder")}
-                            title="E-posta Gönder"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeletePlan(plan)}
-                            title="Sil"
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                          {canSendEmail() && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEmailNotification(plan, "reminder")}
+                              title="E-posta Gönder"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canDelete(plan) && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDeletePlan(plan)}
+                              title="Sil"
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1899,14 +2006,16 @@ Kalite Yönetim Sistemi
                           <Eye className="h-4 w-4 mr-2" />
                           Görüntüle
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditPlan(plan)}
-                          title="Düzenle"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        {canEdit(plan) && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditPlan(plan)}
+                            title="Düzenle"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm"
@@ -1915,14 +2024,16 @@ Kalite Yönetim Sistemi
                         >
                           <FileText className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEmailNotification(plan, "reminder")}
-                          title="E-posta Gönder"
-                        >
-                          <Mail className="h-4 w-4" />
-                        </Button>
+                        {canSendEmail() && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEmailNotification(plan, "reminder")}
+                            title="E-posta Gönder"
+                          >
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
