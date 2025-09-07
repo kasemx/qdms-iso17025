@@ -1260,7 +1260,7 @@ Kalite Yönetim Sistemi
     setEditingPlan(null)
     setFormData({})
     setFormErrors({})
-    setIsNewPlanDialogOpen(true)
+    setIsEditDialogOpen(true)
   }
 
   const handleEditPlan = (plan: TrainingPlan) => {
