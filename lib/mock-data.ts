@@ -225,7 +225,42 @@ export const mockData = {
       tags: ["kalite", "politika", "yönetim"],
       fileSize: 245760,
       fileType: "pdf",
-      isActive: true
+      isActive: true,
+      // ISO 17025 Uyumlu Ek Alanlar
+      workflow: {
+        currentStep: "published",
+        steps: [
+          { step: "draft", user: "Ahmet Yılmaz", date: "2024-01-15", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Fatma Demir", date: "2024-03-10", comment: "İnceleme tamamlandı" },
+          { step: "approve", user: "Genel Müdür", date: "2024-03-15", comment: "Onaylandı" },
+          { step: "published", user: "Sistem", date: "2024-03-20", comment: "Yayınlandı" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: "CR-001",
+        changeReason: "ISO 17025:2017 güncellemesi",
+        impactAnalysis: "Tüm personel etkilenir",
+        changeApprovedBy: "Genel Müdür",
+        changeApprovedDate: "2024-03-15"
+      },
+      retentionPeriod: 5, // yıl
+      securityLevel: "confidential",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: true,
+        signer: "Genel Müdür",
+        signatureDate: "2024-03-15",
+        certificateValid: true
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 1,
+      isDragging: false,
+      isDropTarget: false
     },
     {
       id: "doc-002",
@@ -248,7 +283,42 @@ export const mockData = {
       tags: ["doküman", "kontrol", "prosedür"],
       fileSize: 456320,
       fileType: "pdf",
-      isActive: true
+      isActive: true,
+      // ISO 17025 Uyumlu Ek Alanlar
+      workflow: {
+        currentStep: "published",
+        steps: [
+          { step: "draft", user: "Fatma Demir", date: "2024-01-10", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Ahmet Yılmaz", date: "2024-03-15", comment: "İnceleme tamamlandı" },
+          { step: "approve", user: "Kalite Müdürü", date: "2024-03-20", comment: "Onaylandı" },
+          { step: "published", user: "Sistem", date: "2024-03-25", comment: "Yayınlandı" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: "CR-002",
+        changeReason: "Doküman kontrol sürecinin iyileştirilmesi",
+        impactAnalysis: "Kalite ekibi ve yönetim etkilenir",
+        changeApprovedBy: "Kalite Müdürü",
+        changeApprovedDate: "2024-03-20"
+      },
+      retentionPeriod: 3, // yıl
+      securityLevel: "internal",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: true,
+        signer: "Kalite Müdürü",
+        signatureDate: "2024-03-20",
+        certificateValid: true
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 2,
+      isDragging: false,
+      isDropTarget: false
     },
     {
       id: "doc-003",
@@ -271,7 +341,498 @@ export const mockData = {
       tags: ["test", "metod", "talimat"],
       fileSize: 678912,
       fileType: "pdf",
-      isActive: true
+      isActive: true,
+      // ISO 17025 Uyumlu Ek Alanlar
+      workflow: {
+        currentStep: "published",
+        steps: [
+          { step: "draft", user: "Mehmet Kaya", date: "2024-02-01", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Ahmet Yılmaz", date: "2024-03-15", comment: "İnceleme tamamlandı" },
+          { step: "approve", user: "Teknik Müdür", date: "2024-03-18", comment: "Onaylandı" },
+          { step: "published", user: "Sistem", date: "2024-03-22", comment: "Yayınlandı" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: "CR-003",
+        changeReason: "Test metodunun güncellenmesi",
+        impactAnalysis: "Teknik ekip ve test personeli etkilenir",
+        changeApprovedBy: "Teknik Müdür",
+        changeApprovedDate: "2024-03-18"
+      },
+      retentionPeriod: 2, // yıl
+      securityLevel: "internal",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: true,
+        signer: "Teknik Müdür",
+        signatureDate: "2024-03-18",
+        certificateValid: true
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 3,
+      isDragging: false,
+      isDropTarget: false
+    },
+    {
+      id: "doc-004",
+      code: "EXT-001",
+      title: "ISO 17025:2017 Standardı",
+      category: { id: "ext", code: "EXT", name: "Dış Dokümanlar", color: "#8B5CF6", icon: "ExternalLink" },
+      version: "2017",
+      status: "active",
+      description: "ISO 17025:2017 Laboratuvar yeterliliği standardı",
+      content: "ISO 17025:2017 standardı içeriği...",
+      author: "ISO",
+      reviewer: "Kalite Müdürü",
+      approver: "Genel Müdür",
+      createdAt: "2017-11-01",
+      updatedAt: "2024-01-01",
+      publishedAt: "2017-11-01",
+      nextReviewDate: "2025-01-01",
+      distributionList: ["Kalite Ekibi", "Yönetim", "Teknik Ekip"],
+      relatedDocuments: ["POL-001", "PRO-001"],
+      tags: ["iso", "standard", "dış", "kalite"],
+      fileSize: 2048576,
+      fileType: "pdf",
+      isActive: true,
+      // ISO 17025 Uyumlu Ek Alanlar
+      workflow: {
+        currentStep: "active",
+        steps: [
+          { step: "received", user: "Kalite Müdürü", date: "2017-11-01", comment: "Dış doküman alındı" },
+          { step: "reviewed", user: "Kalite Müdürü", date: "2024-01-01", comment: "Güncelleme kontrol edildi" },
+          { step: "active", user: "Sistem", date: "2024-01-01", comment: "Aktif durumda" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: null,
+        changeReason: "Dış doküman - değişiklik kontrolü yok",
+        impactAnalysis: "Tüm sistem etkilenir",
+        changeApprovedBy: null,
+        changeApprovedDate: null
+      },
+      retentionPeriod: 10, // yıl
+      securityLevel: "public",
+      isExternal: true,
+      externalSource: "ISO",
+      digitalSignature: {
+        signed: false,
+        signer: null,
+        signatureDate: null,
+        certificateValid: false
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 4,
+      isDragging: false,
+      isDropTarget: false
+    },
+    {
+      id: "doc-005",
+      code: "OBS-001",
+      title: "Eski Kalite El Kitabı",
+      category: { id: "obs", code: "OBS", name: "Eski Dokümanlar", color: "#6B7280", icon: "Archive" },
+      version: "v1.0",
+      status: "obsolete",
+      description: "Eski kalite el kitabı - artık geçerli değil",
+      content: "Eski kalite el kitabı içeriği...",
+      author: "Ahmet Yılmaz",
+      reviewer: "Fatma Demir",
+      approver: "Genel Müdür",
+      createdAt: "2023-01-01",
+      updatedAt: "2024-01-01",
+      publishedAt: "2023-01-01",
+      nextReviewDate: null,
+      distributionList: [],
+      relatedDocuments: ["POL-001"],
+      tags: ["eski", "kalite", "el kitabı"],
+      fileSize: 1024000,
+      fileType: "pdf",
+      isActive: false,
+      // ISO 17025 Uyumlu Ek Alanlar
+      workflow: {
+        currentStep: "obsolete",
+        steps: [
+          { step: "draft", user: "Ahmet Yılmaz", date: "2023-01-01", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Fatma Demir", date: "2023-01-15", comment: "İnceleme tamamlandı" },
+          { step: "approve", user: "Genel Müdür", date: "2023-01-20", comment: "Onaylandı" },
+          { step: "published", user: "Sistem", date: "2023-01-25", comment: "Yayınlandı" },
+          { step: "obsolete", user: "Sistem", date: "2024-01-01", comment: "Eski versiyon - arşivlendi" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: "CR-004",
+        changeReason: "Yeni kalite politikası ile değiştirildi",
+        impactAnalysis: "Artık kullanılmıyor",
+        changeApprovedBy: "Genel Müdür",
+        changeApprovedDate: "2024-01-01"
+      },
+      retentionPeriod: 1, // yıl
+      securityLevel: "internal",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: false,
+        signer: null,
+        signatureDate: null,
+        certificateValid: false
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 5,
+      isDragging: false,
+      isDropTarget: false
+    },
+    {
+      id: "doc-006",
+      code: "REV-001",
+      title: "Doküman İnceleme Raporu",
+      category: { id: "rev", code: "REV", name: "İnceleme Raporları", color: "#EF4444", icon: "FileCheck" },
+      version: "v1.0",
+      status: "review",
+      description: "Aylık doküman inceleme raporu",
+      content: "Doküman inceleme raporu içeriği...",
+      author: "Fatma Demir",
+      reviewer: "Ahmet Yılmaz",
+      approver: null,
+      createdAt: "2024-03-01",
+      updatedAt: "2024-03-01",
+      publishedAt: null,
+      nextReviewDate: "2024-04-01",
+      distributionList: ["Kalite Ekibi"],
+      relatedDocuments: ["PRO-001"],
+      tags: ["inceleme", "rapor", "aylık"],
+      fileSize: 156789,
+      fileType: "xlsx",
+      isActive: true,
+      // ISO 17025 Uyumlu Ek Alanlar
+      workflow: {
+        currentStep: "review",
+        steps: [
+          { step: "draft", user: "Fatma Demir", date: "2024-03-01", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Ahmet Yılmaz", date: "2024-03-01", comment: "İnceleme başlatıldı" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: null,
+        changeReason: "Yeni doküman",
+        impactAnalysis: "Kalite ekibi etkilenir",
+        changeApprovedBy: null,
+        changeApprovedDate: null
+      },
+      retentionPeriod: 2, // yıl
+      securityLevel: "internal",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: false,
+        signer: null,
+        signatureDate: null,
+        certificateValid: false
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 6,
+      isDragging: false,
+      isDropTarget: false
+    },
+    // Ek dokümanlar - Pagination test için
+    {
+      id: "doc-007",
+      code: "PRO-002",
+      title: "Numune Alma Prosedürü",
+      category: { id: "pro", code: "PRO", name: "Prosedürler", color: "#10B981", icon: "FileText" },
+      version: "v1.3",
+      status: "approved",
+      description: "Numune alma ve hazırlama prosedürü",
+      content: "Numune alma prosedürü içeriği...",
+      author: "Mehmet Kaya",
+      reviewer: "Ahmet Yılmaz",
+      approver: "Teknik Müdür",
+      createdAt: "2024-02-01",
+      updatedAt: "2024-03-20",
+      publishedAt: "2024-03-25",
+      nextReviewDate: "2025-03-20",
+      distributionList: ["Teknik Ekip"],
+      relatedDocuments: ["TAL-001"],
+      tags: ["numune", "prosedür", "teknik"],
+      fileSize: 189440,
+      fileType: "pdf",
+      isActive: true,
+      workflow: {
+        currentStep: "published",
+        steps: [
+          { step: "draft", user: "Mehmet Kaya", date: "2024-02-01", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Ahmet Yılmaz", date: "2024-03-15", comment: "İnceleme tamamlandı" },
+          { step: "approve", user: "Teknik Müdür", date: "2024-03-20", comment: "Onaylandı" },
+          { step: "published", user: "Sistem", date: "2024-03-25", comment: "Yayınlandı" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: "CR-005",
+        changeReason: "Numune alma sürecinin iyileştirilmesi",
+        impactAnalysis: "Teknik ekip etkilenir",
+        changeApprovedBy: "Teknik Müdür",
+        changeApprovedDate: "2024-03-20"
+      },
+      retentionPeriod: 3,
+      securityLevel: "internal",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: true,
+        signer: "Teknik Müdür",
+        signatureDate: "2024-03-20",
+        certificateValid: true
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 7,
+      isDragging: false,
+      isDropTarget: false
+    },
+    {
+      id: "doc-008",
+      code: "TAL-002",
+      title: "Kalibrasyon Talimatı",
+      category: { id: "tal", code: "TAL", name: "Talimatlar", color: "#F59E0B", icon: "BookOpen" },
+      version: "v2.0",
+      status: "approved",
+      description: "Ekipman kalibrasyon talimatı",
+      content: "Kalibrasyon talimatı içeriği...",
+      author: "Fatma Demir",
+      reviewer: "Mehmet Kaya",
+      approver: "Teknik Müdür",
+      createdAt: "2024-01-15",
+      updatedAt: "2024-03-10",
+      publishedAt: "2024-03-15",
+      nextReviewDate: "2025-03-10",
+      distributionList: ["Teknik Ekip", "Kalite Ekibi"],
+      relatedDocuments: ["PRO-001"],
+      tags: ["kalibrasyon", "talimat", "ekipman"],
+      fileSize: 156672,
+      fileType: "pdf",
+      isActive: true,
+      workflow: {
+        currentStep: "published",
+        steps: [
+          { step: "draft", user: "Fatma Demir", date: "2024-01-15", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Mehmet Kaya", date: "2024-03-05", comment: "İnceleme tamamlandı" },
+          { step: "approve", user: "Teknik Müdür", date: "2024-03-10", comment: "Onaylandı" },
+          { step: "published", user: "Sistem", date: "2024-03-15", comment: "Yayınlandı" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: "CR-006",
+        changeReason: "Kalibrasyon sürecinin güncellenmesi",
+        impactAnalysis: "Teknik ekip ve kalite ekibi etkilenir",
+        changeApprovedBy: "Teknik Müdür",
+        changeApprovedDate: "2024-03-10"
+      },
+      retentionPeriod: 5,
+      securityLevel: "internal",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: true,
+        signer: "Teknik Müdür",
+        signatureDate: "2024-03-10",
+        certificateValid: true
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 8,
+      isDragging: false,
+      isDropTarget: false
+    },
+    {
+      id: "doc-009",
+      code: "FOR-001",
+      title: "Test Raporu Formu",
+      category: { id: "for", code: "FOR", name: "Formlar", color: "#8B5CF6", icon: "FileText" },
+      version: "v1.5",
+      status: "approved",
+      description: "Test raporu doldurma formu",
+      content: "Test raporu formu içeriği...",
+      author: "Ahmet Yılmaz",
+      reviewer: "Fatma Demir",
+      approver: "Kalite Müdürü",
+      createdAt: "2024-01-20",
+      updatedAt: "2024-03-05",
+      publishedAt: "2024-03-10",
+      nextReviewDate: "2025-03-05",
+      distributionList: ["Teknik Ekip", "Kalite Ekibi"],
+      relatedDocuments: ["PRO-001", "TAL-001"],
+      tags: ["form", "test", "rapor"],
+      fileSize: 98304,
+      fileType: "pdf",
+      isActive: true,
+      workflow: {
+        currentStep: "published",
+        steps: [
+          { step: "draft", user: "Ahmet Yılmaz", date: "2024-01-20", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Fatma Demir", date: "2024-03-01", comment: "İnceleme tamamlandı" },
+          { step: "approve", user: "Kalite Müdürü", date: "2024-03-05", comment: "Onaylandı" },
+          { step: "published", user: "Sistem", date: "2024-03-10", comment: "Yayınlandı" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: "CR-007",
+        changeReason: "Form alanlarının güncellenmesi",
+        impactAnalysis: "Teknik ekip ve kalite ekibi etkilenir",
+        changeApprovedBy: "Kalite Müdürü",
+        changeApprovedDate: "2024-03-05"
+      },
+      retentionPeriod: 3,
+      securityLevel: "internal",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: true,
+        signer: "Kalite Müdürü",
+        signatureDate: "2024-03-05",
+        certificateValid: true
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 9,
+      isDragging: false,
+      isDropTarget: false
+    },
+    {
+      id: "doc-010",
+      code: "REC-001",
+      title: "Kalite Kayıtları",
+      category: { id: "rec", code: "REC", name: "Kayıtlar", color: "#EF4444", icon: "FileCheck" },
+      version: "v1.2",
+      status: "approved",
+      description: "Kalite kayıtları tutma prosedürü",
+      content: "Kalite kayıtları içeriği...",
+      author: "Fatma Demir",
+      reviewer: "Ahmet Yılmaz",
+      approver: "Kalite Müdürü",
+      createdAt: "2024-01-25",
+      updatedAt: "2024-03-01",
+      publishedAt: "2024-03-05",
+      nextReviewDate: "2025-03-01",
+      distributionList: ["Kalite Ekibi"],
+      relatedDocuments: ["PRO-001"],
+      tags: ["kayıt", "kalite", "prosedür"],
+      fileSize: 122880,
+      fileType: "pdf",
+      isActive: true,
+      workflow: {
+        currentStep: "published",
+        steps: [
+          { step: "draft", user: "Fatma Demir", date: "2024-01-25", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Ahmet Yılmaz", date: "2024-02-25", comment: "İnceleme tamamlandı" },
+          { step: "approve", user: "Kalite Müdürü", date: "2024-03-01", comment: "Onaylandı" },
+          { step: "published", user: "Sistem", date: "2024-03-05", comment: "Yayınlandı" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: "CR-008",
+        changeReason: "Kayıt tutma sürecinin iyileştirilmesi",
+        impactAnalysis: "Kalite ekibi etkilenir",
+        changeApprovedBy: "Kalite Müdürü",
+        changeApprovedDate: "2024-03-01"
+      },
+      retentionPeriod: 7,
+      securityLevel: "confidential",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: true,
+        signer: "Kalite Müdürü",
+        signatureDate: "2024-03-01",
+        certificateValid: true
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 10,
+      isDragging: false,
+      isDropTarget: false
+    },
+    {
+      id: "doc-011",
+      code: "POL-002",
+      title: "Güvenlik Politikası",
+      category: { id: "pol", code: "POL", name: "Politikalar", color: "#3B82F6", icon: "Shield" },
+      version: "v1.0",
+      status: "review",
+      description: "Bilgi güvenliği politikası",
+      content: "Güvenlik politikası içeriği...",
+      author: "Ahmet Yılmaz",
+      reviewer: "Fatma Demir",
+      approver: null,
+      createdAt: "2024-03-01",
+      updatedAt: "2024-03-01",
+      publishedAt: null,
+      nextReviewDate: "2025-03-01",
+      distributionList: ["Tüm Personel"],
+      relatedDocuments: ["POL-001"],
+      tags: ["güvenlik", "politika", "bilgi"],
+      fileSize: 204800,
+      fileType: "pdf",
+      isActive: true,
+      workflow: {
+        currentStep: "review",
+        steps: [
+          { step: "draft", user: "Ahmet Yılmaz", date: "2024-03-01", comment: "İlk taslak oluşturuldu" },
+          { step: "review", user: "Fatma Demir", date: "2024-03-01", comment: "İnceleme başlatıldı" }
+        ]
+      },
+      changeControl: {
+        changeRequestId: null,
+        changeReason: "Yeni doküman",
+        impactAnalysis: "Tüm personel etkilenir",
+        changeApprovedBy: null,
+        changeApprovedDate: null
+      },
+      retentionPeriod: 5,
+      securityLevel: "confidential",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: {
+        signed: false,
+        signer: null,
+        signatureDate: null,
+        certificateValid: false
+      },
+      // Çoklu Seviye Hiyerarşi
+      parentId: null,
+      children: [],
+      level: 0,
+      isExpanded: true,
+      sortOrder: 11,
+      isDragging: false,
+      isDropTarget: false
     }
   ],
 
@@ -387,41 +948,142 @@ export const mockData = {
 
   // Doküman İstatistikleri
   documentStats: {
-    totalDocuments: 156,
-    activeDocuments: 125,
-    draftDocuments: 12,
-    reviewDocuments: 8,
-    archivedDocuments: 9,
-    cancelledDocuments: 2,
-    totalCategories: 8,
-    totalVersions: 342,
-    averageReviewTime: "3.2 gün",
-    complianceRate: 94.2
+    totalDocuments: 11,
+    activeDocuments: 4,
+    draftDocuments: 0,
+    reviewDocuments: 1,
+    approvedDocuments: 3,
+    obsoleteDocuments: 1,
+    externalDocuments: 1,
+    totalCategories: 6,
+    totalVersions: 12,
+    averageReviewTime: "2.5 gün",
+    complianceRate: 95.8,
+    // ISO 17025 Uyumlu Ek İstatistikler
+    workflowStats: {
+      pendingReview: 1,
+      pendingApproval: 0,
+      published: 3,
+      obsolete: 1,
+      external: 1
+    },
+    retentionStats: {
+      expiringSoon: 2, // 30 gün içinde süresi dolacak
+      expired: 0,
+      archived: 1
+    },
+    securityStats: {
+      confidential: 1,
+      internal: 4,
+      public: 1
+    }
   },
 
   // Kategori İstatistikleri
   categoryStats: [
-    { category: "Politikalar", count: 8, percentage: 5.1, trend: "stable" },
-    { category: "Prosedürler", count: 24, percentage: 15.4, trend: "up" },
-    { category: "Talimatlar", count: 18, percentage: 11.5, trend: "stable" },
-    { category: "Formlar", count: 32, percentage: 20.5, trend: "up" },
-    { category: "Kayıtlar", count: 45, percentage: 28.8, trend: "up" },
-    { category: "Test Metotları", count: 15, percentage: 9.6, trend: "stable" },
-    { category: "Kalibrasyon", count: 14, percentage: 9.0, trend: "down" }
+    { category: "Politikalar", count: 2, percentage: 18.2, trend: "up", color: "#3B82F6" },
+    { category: "Prosedürler", count: 2, percentage: 18.2, trend: "up", color: "#10B981" },
+    { category: "Talimatlar", count: 2, percentage: 18.2, trend: "up", color: "#F59E0B" },
+    { category: "Formlar", count: 1, percentage: 9.1, trend: "stable", color: "#8B5CF6" },
+    { category: "Kayıtlar", count: 1, percentage: 9.1, trend: "stable", color: "#EF4444" },
+    { category: "Dış Dokümanlar", count: 1, percentage: 9.1, trend: "stable", color: "#8B5CF6" },
+    { category: "Eski Dokümanlar", count: 1, percentage: 9.1, trend: "down", color: "#6B7280" },
+    { category: "İnceleme Raporları", count: 1, percentage: 9.1, trend: "up", color: "#EF4444" }
   ],
 
   // Arama Önerileri
   searchSuggestions: [
     "kalite politikası",
     "doküman kontrol",
-    "numune yönetimi",
-    "kalibrasyon prosedürü",
-    "test metotları",
-    "iç denetim",
-    "müşteri şikayetleri",
-    "risk yönetimi",
-    "personel eğitimi",
-    "ekipman yönetimi"
+    "test metodu",
+    "ISO 17025",
+    "prosedür",
+    "talimat",
+    "form",
+    "rapor",
+    "inceleme",
+    "onay",
+    "versiyon",
+    "değişiklik",
+    "dış doküman",
+    "eski doküman",
+    "elektronik imza",
+    "güvenlik",
+    "saklama süresi",
+    "workflow",
+    "onay süreci",
+    "değişiklik kontrolü"
+  ],
+
+  // Doküman Kategorileri (Detaylı)
+  documentCategories: [
+    { id: "pol", code: "POL", name: "Politikalar", color: "#3B82F6", icon: "Shield", description: "Kalite politikaları ve hedefler" },
+    { id: "pro", code: "PRO", name: "Prosedürler", color: "#10B981", icon: "FileText", description: "İş süreçleri ve prosedürler" },
+    { id: "tal", code: "TAL", name: "Talimatlar", color: "#F59E0B", icon: "BookOpen", description: "Teknik talimatlar ve kılavuzlar" },
+    { id: "ext", code: "EXT", name: "Dış Dokümanlar", color: "#8B5CF6", icon: "ExternalLink", description: "Dış kaynaklı dokümanlar" },
+    { id: "obs", code: "OBS", name: "Eski Dokümanlar", color: "#6B7280", icon: "Archive", description: "Artık geçerli olmayan dokümanlar" },
+    { id: "rev", code: "REV", name: "İnceleme Raporları", color: "#EF4444", icon: "FileCheck", description: "Doküman inceleme ve değerlendirme raporları" }
+  ],
+
+  // Doküman Durumları
+  documentStatuses: [
+    { id: "draft", name: "Taslak", color: "#6B7280", description: "Henüz tamamlanmamış doküman" },
+    { id: "review", name: "İnceleme", color: "#F59E0B", description: "İnceleme aşamasında" },
+    { id: "approved", name: "Onaylandı", color: "#10B981", description: "Onaylanmış ve yayınlanmış" },
+    { id: "obsolete", name: "Eski", color: "#6B7280", description: "Artık geçerli değil" },
+    { id: "active", name: "Aktif", color: "#3B82F6", description: "Aktif olarak kullanılıyor" }
+  ],
+
+  // Güvenlik Seviyeleri
+  securityLevels: [
+    { id: "public", name: "Genel", color: "#10B981", description: "Herkes erişebilir" },
+    { id: "internal", name: "İç Kullanım", color: "#F59E0B", description: "Sadece şirket içi" },
+    { id: "confidential", name: "Gizli", color: "#EF4444", description: "Sınırlı erişim" }
+  ],
+
+  // Workflow Adımları
+  workflowSteps: [
+    { id: "draft", name: "Taslak", color: "#6B7280", order: 1 },
+    { id: "review", name: "İnceleme", color: "#F59E0B", order: 2 },
+    { id: "approve", name: "Onay", color: "#3B82F6", order: 3 },
+    { id: "published", name: "Yayınlandı", color: "#10B981", order: 4 },
+    { id: "obsolete", name: "Eski", color: "#6B7280", order: 5 }
+  ],
+
+  // Değişiklik Kontrol Durumları
+  changeControlStatuses: [
+    { id: "requested", name: "Talep Edildi", color: "#F59E0B" },
+    { id: "under_review", name: "İnceleme Altında", color: "#3B82F6" },
+    { id: "approved", name: "Onaylandı", color: "#10B981" },
+    { id: "rejected", name: "Reddedildi", color: "#EF4444" },
+    { id: "implemented", name: "Uygulandı", color: "#059669" }
+  ],
+
+  // Arama Geçmişi (Örnek)
+  searchHistory: [
+    "kalite politikası",
+    "doküman kontrol",
+    "ISO 17025",
+    "test metodu",
+    "prosedür"
+  ],
+
+  // Popüler Aramalar
+  popularSearches: [
+    "kalite politikası",
+    "doküman kontrol prosedürü",
+    "test metodu talimatı",
+    "ISO 17025 standardı",
+    "inceleme raporu"
+  ],
+
+  // Hızlı Filtreler
+  quickFilters: [
+    { id: "pending_review", name: "İnceleme Bekleyen", icon: "Clock", color: "#F59E0B" },
+    { id: "expiring_soon", name: "Süresi Dolacak", icon: "AlertTriangle", color: "#EF4444" },
+    { id: "external_docs", name: "Dış Dokümanlar", icon: "ExternalLink", color: "#8B5CF6" },
+    { id: "obsolete_docs", name: "Eski Dokümanlar", icon: "Archive", color: "#6B7280" },
+    { id: "confidential", name: "Gizli Dokümanlar", icon: "Shield", color: "#EF4444" }
   ],
 
   // Kalibrasyon Programı Verileri

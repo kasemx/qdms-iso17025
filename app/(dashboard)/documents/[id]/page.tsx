@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -182,7 +182,10 @@ const actionLabels = {
   reject: "Reddetme",
 }
 
-export default function DocumentDetailPage({ params }: { params: { id: string } }) {
+export default function DocumentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  // Next.js 15 uyumlu params unwrapping
+  const resolvedParams = use(params)
+  
   const [activeTab, setActiveTab] = useState("content")
   const [showVersionComparison, setShowVersionComparison] = useState(false)
   const [selectedVersions, setSelectedVersions] = useState<string[]>([])
@@ -207,7 +210,7 @@ export default function DocumentDetailPage({ params }: { params: { id: string } 
     const fetchDocument = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/documents/${params.id}`, {
+        const response = await fetch(`/api/documents/${resolvedParams.id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -224,10 +227,10 @@ export default function DocumentDetailPage({ params }: { params: { id: string } 
       }
     }
 
-    if (params.id) {
+    if (resolvedParams.id) {
       fetchDocument()
     }
-  }, [params.id])
+  }, [resolvedParams.id])
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes"
@@ -251,7 +254,7 @@ export default function DocumentDetailPage({ params }: { params: { id: string } 
 
   const handlePDFDownload = async () => {
     try {
-      const response = await fetch(`/api/documents/${params.id}/download-pdf`, {
+      const response = await fetch(`/api/documents/${resolvedParams.id}/download-pdf`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -276,7 +279,7 @@ export default function DocumentDetailPage({ params }: { params: { id: string } 
 
   const handleApproval = async (action: "approve" | "reject", comment?: string) => {
     try {
-      const response = await fetch(`/api/documents/${params.id}/approve`, {
+      const response = await fetch(`/api/documents/${resolvedParams.id}/approve`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

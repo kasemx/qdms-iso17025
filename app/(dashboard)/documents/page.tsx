@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Progress } from "@/components/ui/progress"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,108 +45,263 @@ import {
   Trash2,
   AlertTriangle,
   CheckCircle,
+  Clock,
+  ExternalLink,
+  Shield,
+  BookOpen,
+  FileCheck,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Grid3X3,
+  List,
+  TreePine,
+  Clock3,
+  SortAsc,
+  SortDesc,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Bell,
+  Settings,
+  Upload,
+  Mail,
+  Send,
+  GitCompare
 } from "lucide-react"
 import Link from "next/link"
 import { mockApi } from "@/lib/mock-data"
+import { toast } from "sonner"
 
-// Mock data - gerçek uygulamada API'den gelecek
-const documents = [
-  {
-    id: "1",
-    documentCode: "PR-KG-001",
-    title: "Doküman Kontrol Prosedürü",
-    description: "Şirket içi dokümanların oluşturulması, onaylanması ve kontrolü için prosedür",
-    category: { name: "Prosedür", code: "PR" },
-    department: { name: "Kalite Güvence" },
-    owner: { name: "Sistem Yöneticisi" },
-    currentVersion: 2,
-    status: "published",
-    effectiveDate: "2024-01-15",
-    nextReviewDate: "2025-01-15",
-    fileType: "pdf",
-    fileSize: 245760,
-    createdAt: "2024-01-10",
-    updatedAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    documentCode: "TL-LAB-001",
-    title: "Laboratuvar Cihaz Kalibrasyonu Talimatı",
-    description: "Laboratuvar cihazlarının kalibrasyon işlemleri için detaylı talimat",
-    category: { name: "Talimat", code: "TL" },
-    department: { name: "Laboratuvar" },
-    owner: { name: "Ahmet Yılmaz" },
-    currentVersion: 1,
-    status: "review",
-    effectiveDate: null,
-    nextReviewDate: "2024-07-15",
-    fileType: "docx",
-    fileSize: 156432,
-    createdAt: "2024-01-05",
-    updatedAt: "2024-01-12",
-  },
-  {
-    id: "3",
-    documentCode: "FR-IK-001",
-    title: "Personel Eğitim Kayıt Formu",
-    description: "Personel eğitimlerinin kaydedilmesi için kullanılan form",
-    category: { name: "Form", code: "FR" },
-    department: { name: "İnsan Kaynakları" },
-    owner: { name: "Fatma Demir" },
-    currentVersion: 3,
-    status: "published",
-    effectiveDate: "2024-01-01",
-    nextReviewDate: "2026-01-01",
-    fileType: "xlsx",
-    fileSize: 89123,
-    createdAt: "2023-12-15",
-    updatedAt: "2024-01-01",
-  },
-  {
-    id: "4",
-    documentCode: "EK-KG-001",
-    title: "Kalite El Kitabı",
-    description: "Şirket kalite yönetim sistemi el kitabı",
-    category: { name: "El Kitabı", code: "EK" },
-    department: { name: "Kalite Güvence" },
-    owner: { name: "Mehmet Kaya" },
-    currentVersion: 1,
-    status: "draft",
-    effectiveDate: null,
-    nextReviewDate: null,
-    fileType: "pdf",
-    fileSize: 1245760,
-    createdAt: "2024-01-20",
-    updatedAt: "2024-01-22",
-  },
-]
-
-const statusColors = {
-  draft: "bg-gray-100 text-gray-800 border-gray-300",
-  review: "bg-blue-100 text-blue-800 border-blue-300",
-  approved: "bg-green-100 text-green-800 border-green-300",
-  published: "bg-green-100 text-green-800 border-green-300",
-  archived: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  obsolete: "bg-red-100 text-red-800 border-red-300",
+// Interface tanımları
+interface Document {
+  id: string
+  code: string
+  title: string
+  category: {
+    id: string
+    code: string
+    name: string
+    color: string
+    icon: string
+  }
+  version: string
+  status: string
+  description: string
+  content: string
+  author: string
+  reviewer: string
+  approver: string | null
+  createdAt: string
+  updatedAt: string
+  publishedAt?: string | null
+  nextReviewDate: string | null
+  distributionList: string[]
+  relatedDocuments: string[]
+  tags: string[]
+  fileSize: number
+  fileType: string
+  isActive: boolean
+  workflow: {
+    currentStep: string
+    steps: Array<{
+      step: string
+      user: string
+      date: string
+      comment: string
+    }>
+  }
+  changeControl: {
+    changeRequestId: string | null
+    changeReason: string
+    impactAnalysis: string
+    changeApprovedBy: string | null
+    changeApprovedDate: string | null
+  }
+  retentionPeriod: number
+  securityLevel: string
+  isExternal: boolean
+  externalSource: string | null
+  digitalSignature: {
+    signed: boolean
+    signer: string | null
+    signatureDate: string | null
+    certificateValid: boolean
+  }
+  // Çoklu Seviye Hiyerarşi için Ek Alanlar
+  parentId?: string | null
+  children?: Document[]
+  level: number
+  isExpanded?: boolean
+  sortOrder: number
+  // Drag & Drop için
+  isDragging?: boolean
+  isDropTarget?: boolean
 }
 
-const statusLabels = {
-  draft: "Taslak",
-  review: "İncelemede",
-  approved: "Onaylandı",
-  published: "Yayınlandı",
-  archived: "Arşivlendi",
-  obsolete: "Geçersiz",
+interface DocumentStats {
+  totalDocuments: number
+  activeDocuments: number
+  draftDocuments: number
+  reviewDocuments: number
+  approvedDocuments: number
+  obsoleteDocuments: number
+  externalDocuments: number
+  totalCategories: number
+  totalVersions: number
+  averageReviewTime: string
+  complianceRate: number
+  workflowStats: {
+    pendingReview: number
+    pendingApproval: number
+    published: number
+    obsolete: number
+    external: number
+  }
+  retentionStats: {
+    expiringSoon: number
+    expired: number
+    archived: number
+  }
+  securityStats: {
+    confidential: number
+    internal: number
+    public: number
+  }
+}
+
+interface CategoryStats {
+  category: string
+  count: number
+  percentage: number
+  trend: string
+  color: string
+}
+
+interface QuickFilter {
+  id: string
+  name: string
+  icon: string
+  color: string
+}
+
+// Utility fonksiyonları
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return "0 Bytes"
+  const k = 1024
+  const sizes = ["Bytes", "KB", "MB", "GB"]
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+}
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("tr-TR")
+}
+
+const getDaysAgo = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffTime = Math.abs(now.getTime() - date.getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return diffDays
+}
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case "draft":
+      return <FileText className="h-4 w-4 text-gray-500" />
+    case "review":
+      return <Clock className="h-4 w-4 text-yellow-500" />
+    case "approved":
+    case "published":
+      return <CheckCircle className="h-4 w-4 text-green-500" />
+    case "obsolete":
+      return <Archive className="h-4 w-4 text-gray-500" />
+    case "active":
+      return <Activity className="h-4 w-4 text-blue-500" />
+    default:
+      return <FileText className="h-4 w-4 text-gray-500" />
+  }
+}
+
+const getStatusVariant = (status: string | undefined) => {
+  if (!status) return "secondary"
+  switch (status) {
+    case "draft":
+      return "secondary"
+    case "review":
+      return "default"
+    case "approved":
+    case "published":
+      return "default"
+    case "obsolete":
+      return "destructive"
+    case "active":
+      return "default"
+    default:
+      return "secondary"
+  }
+}
+
+const getStatusText = (status: string | undefined) => {
+  if (!status) return "Bilinmiyor"
+  switch (status) {
+    case "draft":
+      return "Taslak"
+    case "review":
+      return "İnceleme"
+    case "approved":
+      return "Onaylandı"
+    case "published":
+      return "Yayınlandı"
+    case "obsolete":
+      return "Eski"
+    case "active":
+      return "Aktif"
+    default:
+      return status
+  }
 }
 
 export default function DocumentsPage() {
+  // Ana state'ler
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [documentStats, setDocumentStats] = useState<DocumentStats | null>(null)
+  const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([])
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([])
+  const [searchHistory, setSearchHistory] = useState<string[]>([])
+  const [popularSearches, setPopularSearches] = useState<string[]>([])
+  const [quickFilters, setQuickFilters] = useState<QuickFilter[]>([])
+  
+  // Çoklu Seviye Hiyerarşi için State'ler
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [draggedDocument, setDraggedDocument] = useState<Document | null>(null)
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const [hierarchicalDocuments, setHierarchicalDocuments] = useState<Document[]>([])
+  
+  // Arama ve filtreleme
   const [searchTerm, setSearchTerm] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
   const [statusFilter, setStatusFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [dateRange, setDateRange] = useState({ start: "", end: "" })
+  const [fileSizeRange, setFileSizeRange] = useState({ min: "", max: "" })
+  const [fileTypeFilter, setFileTypeFilter] = useState("all")
+  const [securityLevelFilter, setSecurityLevelFilter] = useState("all")
+  const [authorFilter, setAuthorFilter] = useState("")
+  
+  // Görünüm ve sıralama
+  const [viewMode, setViewMode] = useState<"list" | "grid" | "tree" | "timeline">("list")
+  const [sortBy, setSortBy] = useState("title")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  
+  // Seçim ve toplu işlemler
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([])
-  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false)
-  const [selectedDocumentForHistory, setSelectedDocumentForHistory] = useState<any>(null)
-
   const [isBulkOperationOpen, setIsBulkOperationOpen] = useState(false)
   const [bulkOperationType, setBulkOperationType] = useState<
     "approve" | "reject" | "archive" | "delete" | "download" | null
@@ -153,43 +309,307 @@ export default function DocumentsPage() {
   const [bulkComment, setBulkComment] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const filteredDocuments = documents.filter((doc) => {
-    const matchesSearch =
-      doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.documentCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.description.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStatus = statusFilter === "all" || doc.status === statusFilter
-    const matchesCategory = categoryFilter === "all" || doc.category.code === categoryFilter
-
-    return matchesSearch && matchesStatus && matchesCategory
+  // Dialog'lar
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false)
+  const [selectedDocumentForHistory, setSelectedDocumentForHistory] = useState<any>(null)
+  const [isWorkflowDialogOpen, setIsWorkflowDialogOpen] = useState(false)
+  const [selectedDocumentForWorkflow, setSelectedDocumentForWorkflow] = useState<any>(null)
+  const [isChangeControlDialogOpen, setIsChangeControlDialogOpen] = useState(false)
+  const [selectedDocumentForChange, setSelectedDocumentForChange] = useState<any>(null)
+  
+  // Real-time updates
+  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(false)
+  const [updateNotifications, setUpdateNotifications] = useState<any[]>([])
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false)
+  
+  // Role-based access
+  const [currentUser, setCurrentUser] = useState({
+    id: "user-001",
+    name: "Ahmet Yılmaz",
+    role: "admin",
+    permissions: ["read", "write", "delete", "approve", "export"]
   })
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes"
-    const k = 1024
-    const sizes = ["Bytes", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+  // Data loading
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [docsData, statsData, categoriesData, suggestionsData, historyData, popularData, filtersData] = await Promise.all([
+          mockApi.getDocuments(),
+          mockApi.getDocumentStats(),
+          mockApi.getCategoryStats(),
+          mockApi.getSearchSuggestions(""),
+          Promise.resolve(JSON.parse(localStorage.getItem("documentSearchHistory") || "[]")),
+          Promise.resolve(["kalite politikası", "doküman kontrol", "ISO 17025", "test metodu", "prosedür"]),
+          Promise.resolve([
+            { id: "pending_review", name: "İnceleme Bekleyen", icon: "Clock", color: "#F59E0B" },
+            { id: "expiring_soon", name: "Süresi Dolacak", icon: "AlertTriangle", color: "#EF4444" },
+            { id: "external_docs", name: "Dış Dokümanlar", icon: "ExternalLink", color: "#8B5CF6" },
+            { id: "obsolete_docs", name: "Eski Dokümanlar", icon: "Archive", color: "#6B7280" },
+            { id: "confidential", name: "Gizli Dokümanlar", icon: "Shield", color: "#EF4444" }
+          ])
+        ])
+        
+        setDocuments(docsData)
+        setDocumentStats(statsData)
+        setCategoryStats(categoriesData as CategoryStats[])
+        setSearchSuggestions(suggestionsData)
+        setSearchHistory(historyData)
+        setPopularSearches(popularData)
+        setQuickFilters(filtersData)
+      } catch (error) {
+        console.error("Error loading data:", error)
+        toast.error("Veriler yüklenirken hata oluştu")
+      }
+    }
+    
+    loadData()
+  }, [])
+
+  // Filtreleme fonksiyonu
+  const filteredDocuments = documents.filter((doc) => {
+    const matchesSearch = searchTerm === "" || 
+      doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+
+    const matchesStatus = statusFilter === "all" || doc.status === statusFilter
+    const matchesCategory = categoryFilter === "all" || doc.category.id === categoryFilter
+    const matchesFileType = fileTypeFilter === "all" || doc.fileType === fileTypeFilter
+    const matchesSecurityLevel = securityLevelFilter === "all" || doc.securityLevel === securityLevelFilter
+    const matchesAuthor = authorFilter === "" || doc.author.toLowerCase().includes(authorFilter.toLowerCase())
+    
+    // Tarih aralığı filtresi
+    const matchesDateRange = (() => {
+      if (!dateRange.start && !dateRange.end) return true
+      const docDate = new Date(doc.createdAt)
+      const startDate = dateRange.start ? new Date(dateRange.start) : new Date(0)
+      const endDate = dateRange.end ? new Date(dateRange.end) : new Date()
+      return docDate >= startDate && docDate <= endDate
+    })()
+    
+    // Dosya boyutu filtresi
+    const matchesFileSize = (() => {
+      if (!fileSizeRange.min && !fileSizeRange.max) return true
+      const minSize = fileSizeRange.min ? parseInt(fileSizeRange.min) * 1024 * 1024 : 0
+      const maxSize = fileSizeRange.max ? parseInt(fileSizeRange.max) * 1024 * 1024 : Infinity
+      return doc.fileSize >= minSize && doc.fileSize <= maxSize
+    })()
+
+    return matchesSearch && matchesStatus && matchesCategory && matchesFileType && 
+           matchesSecurityLevel && matchesAuthor && matchesDateRange && matchesFileSize
+  })
+
+  // Sıralama fonksiyonu
+  const sortedDocuments = [...filteredDocuments].sort((a, b) => {
+    let aValue: any, bValue: any
+    
+    switch (sortBy) {
+      case "title":
+        aValue = a.title
+        bValue = b.title
+        break
+      case "code":
+        aValue = a.code
+        bValue = b.code
+        break
+      case "createdAt":
+        aValue = new Date(a.createdAt)
+        bValue = new Date(b.createdAt)
+        break
+      case "updatedAt":
+        aValue = new Date(a.updatedAt)
+        bValue = new Date(b.updatedAt)
+        break
+      case "fileSize":
+        aValue = a.fileSize
+        bValue = b.fileSize
+        break
+      case "author":
+        aValue = a.author
+        bValue = b.author
+        break
+      case "status":
+        aValue = a.status
+        bValue = b.status
+        break
+      default:
+        aValue = a.title
+        bValue = b.title
+    }
+    
+    if (aValue < bValue) return sortOrder === "asc" ? -1 : 1
+    if (aValue > bValue) return sortOrder === "asc" ? 1 : -1
+    return 0
+  })
+
+  // Pagination hesaplamaları
+  const totalPages = Math.ceil(sortedDocuments.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedDocuments = sortedDocuments.slice(startIndex, endIndex)
+
+  // Arama önerileri oluşturma
+  const generateSearchSuggestions = (query: string) => {
+    if (query.length < 2) return []
+    
+    const suggestions: string[] = []
+    const lowerQuery = query.toLowerCase()
+    
+    documents.forEach(doc => {
+      if (doc.title.toLowerCase().includes(lowerQuery)) {
+        suggestions.push(doc.title)
+      }
+      if (doc.author.toLowerCase().includes(lowerQuery)) {
+        suggestions.push(doc.author)
+      }
+      if (doc.category.name.toLowerCase().includes(lowerQuery)) {
+        suggestions.push(doc.category.name)
+      }
+      doc.tags.forEach(tag => {
+        if (tag.toLowerCase().includes(lowerQuery)) {
+          suggestions.push(tag)
+        }
+      })
+    })
+    
+    return [...new Set(suggestions)].slice(0, 5)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("tr-TR")
+  // Arama geçmişi yönetimi
+  const addToSearchHistory = (query: string) => {
+    if (!query.trim()) return
+    
+    const newHistory = [query, ...searchHistory.filter(item => item !== query)].slice(0, 10)
+    setSearchHistory(newHistory)
+    localStorage.setItem("documentSearchHistory", JSON.stringify(newHistory))
   }
 
+  const clearSearchHistory = () => {
+    setSearchHistory([])
+    localStorage.removeItem("documentSearchHistory")
+  }
+
+  // Hızlı filtreler
+  const getQuickFilters = () => [
+    {
+      label: "İnceleme Bekleyen",
+      filter: () => setStatusFilter("review")
+    },
+    {
+      label: "Süresi Dolacak",
+      filter: () => {
+        const thirtyDaysFromNow = new Date()
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+        setDateRange({ start: "", end: thirtyDaysFromNow.toISOString().split('T')[0] })
+      }
+    },
+    {
+      label: "Dış Dokümanlar",
+      filter: () => setCategoryFilter("ext")
+    },
+    {
+      label: "Eski Dokümanlar",
+      filter: () => setStatusFilter("obsolete")
+    },
+    {
+      label: "Gizli Dokümanlar",
+      filter: () => setSecurityLevelFilter("confidential")
+    }
+  ]
+
+  // Seçim fonksiyonları
   const handleSelectAll = () => {
-    if (selectedDocuments.length === filteredDocuments.length) {
+    if (selectedDocuments.length === paginatedDocuments.length) {
       setSelectedDocuments([])
     } else {
-      setSelectedDocuments(filteredDocuments.map((doc) => doc.id))
+      setSelectedDocuments(paginatedDocuments.map(doc => doc.id))
     }
   }
 
   const handleSelectDocument = (documentId: string) => {
-    setSelectedDocuments((prev) =>
-      prev.includes(documentId) ? prev.filter((id) => id !== documentId) : [...prev, documentId],
+    setSelectedDocuments(prev => 
+      prev.includes(documentId) 
+        ? prev.filter(id => id !== documentId)
+        : [...prev, documentId]
     )
   }
+
+  // Arama fonksiyonları
+  const handleSearchInputChange = (value: string) => {
+    setSearchTerm(value)
+    setShowSuggestions(value.length > 0)
+    
+    if (value.length >= 2) {
+      const suggestions = generateSearchSuggestions(value)
+      setSearchSuggestions(suggestions)
+    }
+  }
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchTerm(suggestion)
+    setShowSuggestions(false)
+    addToSearchHistory(suggestion)
+  }
+
+  // Sayfa değiştirme
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items)
+    setCurrentPage(1)
+  }
+
+  // Yetki kontrolü
+  const hasPermission = (permission: string) => {
+    return currentUser.permissions.includes(permission)
+  }
+
+  const canEdit = (doc: Document) => {
+    return hasPermission("write") && (doc.status === "draft" || doc.status === "review")
+  }
+
+  const canDelete = (doc: Document) => {
+    return hasPermission("delete") && (doc.status === "draft" || doc.status === "obsolete")
+  }
+
+  const canApprove = (doc: Document) => {
+    return hasPermission("approve") && doc.status === "review"
+  }
+
+  const handlePDFDownload = async (document: any) => {
+    try {
+      const response = await fetch(`/api/documents/${document.id}/download-pdf`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `${document.code}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        toast.success("Doküman indirildi")
+      } else {
+        toast.error("İndirme hatası")
+      }
+    } catch (error) {
+      console.error("PDF indirme hatası:", error)
+      toast.error("İndirme hatası")
+    }
+  }
+
 
   const handleBulkDownload = async () => {
     setBulkOperationType("download")
@@ -297,7 +717,7 @@ export default function DocumentsPage() {
     return selectedDocuments
       .map((id) => {
         const doc = documents.find((d) => d.id === id)
-        return doc ? { id: doc.id, title: doc.title, code: doc.documentCode, status: doc.status } : null
+        return doc ? { id: doc.id, title: doc.title, code: doc.code, status: doc.status } : null
       })
       .filter(Boolean)
   }
@@ -332,7 +752,7 @@ export default function DocumentsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dokümanlar</h1>
-          <p className="text-muted-foreground">Tüm kalite dokümanlarını yönetin</p>
+          <p className="text-muted-foreground">ISO 17025 uyumlu doküman yönetim sistemi</p>
         </div>
         <div className="flex items-center space-x-2">
           {selectedDocuments.length > 0 && (
@@ -457,91 +877,351 @@ export default function DocumentsPage() {
         </Card>
       </div>
 
-      {/* Filters and Search */}
+      {/* Arama ve Filtreleme */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Filter className="h-5 w-5" />
-            <span>Filtreler ve Arama</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
+        <CardContent className="pt-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Arama Kutusu */}
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Doküman ara (başlık, kod, açıklama)..."
+                  placeholder="Doküman ara (başlık, kod, açıklama, yazar, etiket)..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  onFocus={() => setShowSuggestions(searchTerm.length > 0)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   className="pl-10"
                 />
+                
+                {/* Arama Önerileri */}
+                {showSuggestions && (searchSuggestions.length > 0 || searchHistory.length > 0) && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {searchSuggestions.length > 0 && (
+                      <div className="p-2">
+                        <div className="text-xs font-medium text-gray-500 mb-2">Öneriler</div>
+                        {searchSuggestions.map((suggestion, index) => (
+                          <div
+                            key={index}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                            onClick={() => handleSuggestionClick(suggestion)}
+                          >
+                            <Search className="inline h-3 w-3 mr-2 text-gray-400" />
+                            {suggestion}
+              </div>
+                        ))}
+            </div>
+                    )}
+                    
+                    {searchHistory.length > 0 && (
+                      <div className="p-2 border-t">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-xs font-medium text-gray-500">Son Aramalar</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearSearchHistory}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Temizle
+                          </Button>
+                        </div>
+                        {searchHistory.slice(0, 5).map((item, index) => (
+                          <div
+                            key={index}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                            onClick={() => handleSuggestionClick(item)}
+                          >
+                            <History className="inline h-3 w-3 mr-2 text-gray-400" />
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Görünüm Modları ve Filtreler */}
+            <div className="flex items-center gap-2">
+              {/* Görünüm Modları */}
+              <div className="flex items-center border rounded-md">
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="rounded-r-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="rounded-none border-x"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "tree" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("tree")}
+                  className="rounded-none border-x"
+                >
+                  <TreePine className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "timeline" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("timeline")}
+                  className="rounded-l-none"
+                >
+                  <Clock3 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Filtreler Toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filtreler
+                {showFilters && <ChevronLeft className="h-4 w-4" />}
+                {!showFilters && <ChevronRight className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Gelişmiş Filtreler */}
+          <div className={`mt-4 transition-all duration-300 ease-in-out ${
+            showFilters ? "max-h-screen opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+          }`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+              {/* Durum Filtresi */}
+              <div>
+                <Label className="text-sm font-medium">Durum</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Durum filtresi" />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Durum seçin" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tüm Durumlar</SelectItem>
                 <SelectItem value="draft">Taslak</SelectItem>
-                <SelectItem value="review">İncelemede</SelectItem>
+                    <SelectItem value="review">İnceleme</SelectItem>
                 <SelectItem value="approved">Onaylandı</SelectItem>
                 <SelectItem value="published">Yayınlandı</SelectItem>
-                <SelectItem value="archived">Arşivlendi</SelectItem>
-                <SelectItem value="obsolete">Geçersiz</SelectItem>
+                    <SelectItem value="obsolete">Eski</SelectItem>
+                    <SelectItem value="active">Aktif</SelectItem>
               </SelectContent>
             </Select>
+              </div>
+
+              {/* Kategori Filtresi */}
+              <div>
+                <Label className="text-sm font-medium">Kategori</Label>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Kategori filtresi" />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Kategori seçin" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tüm Kategoriler</SelectItem>
-                <SelectItem value="PR">Prosedür</SelectItem>
-                <SelectItem value="TL">Talimat</SelectItem>
-                <SelectItem value="FR">Form</SelectItem>
-                <SelectItem value="EK">El Kitabı</SelectItem>
-                <SelectItem value="KY">Kayıt</SelectItem>
-                <SelectItem value="PL">Politika</SelectItem>
+                    <SelectItem value="pol">Politikalar</SelectItem>
+                    <SelectItem value="pro">Prosedürler</SelectItem>
+                    <SelectItem value="tal">Talimatlar</SelectItem>
+                    <SelectItem value="ext">Dış Dokümanlar</SelectItem>
+                    <SelectItem value="obs">Eski Dokümanlar</SelectItem>
+                    <SelectItem value="rev">İnceleme Raporları</SelectItem>
               </SelectContent>
             </Select>
+              </div>
+
+              {/* Dosya Türü Filtresi */}
+              <div>
+                <Label className="text-sm font-medium">Dosya Türü</Label>
+                <Select value={fileTypeFilter} onValueChange={setFileTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Dosya türü seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Türler</SelectItem>
+                    <SelectItem value="pdf">PDF</SelectItem>
+                    <SelectItem value="docx">DOCX</SelectItem>
+                    <SelectItem value="xlsx">XLSX</SelectItem>
+                    <SelectItem value="pptx">PPTX</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Güvenlik Seviyesi Filtresi */}
+              <div>
+                <Label className="text-sm font-medium">Güvenlik Seviyesi</Label>
+                <Select value={securityLevelFilter} onValueChange={setSecurityLevelFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Güvenlik seviyesi seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Seviyeler</SelectItem>
+                    <SelectItem value="public">Genel</SelectItem>
+                    <SelectItem value="internal">İç Kullanım</SelectItem>
+                    <SelectItem value="confidential">Gizli</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Tarih Aralığı */}
+              <div>
+                <Label className="text-sm font-medium">Oluşturma Tarihi</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    className="text-sm"
+                  />
+                  <Input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Dosya Boyutu */}
+              <div>
+                <Label className="text-sm font-medium">Dosya Boyutu (MB)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={fileSizeRange.min}
+                    onChange={(e) => setFileSizeRange(prev => ({ ...prev, min: e.target.value }))}
+                    className="text-sm"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={fileSizeRange.max}
+                    onChange={(e) => setFileSizeRange(prev => ({ ...prev, max: e.target.value }))}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Yazar Filtresi */}
+              <div>
+                <Label className="text-sm font-medium">Yazar</Label>
+                <Input
+                  placeholder="Yazar ara..."
+                  value={authorFilter}
+                  onChange={(e) => setAuthorFilter(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+
+              {/* Hızlı Filtreler */}
+              <div>
+                <Label className="text-sm font-medium">Hızlı Filtreler</Label>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {getQuickFilters().map((filter, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      onClick={filter.filter}
+                      className="text-xs h-7"
+                    >
+                      {filter.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Documents Table */}
+      {/* Doküman Listesi */}
       <Card>
         <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
           <CardTitle>Doküman Listesi</CardTitle>
           <CardDescription>
-            {filteredDocuments.length} doküman bulundu
+                {sortedDocuments.length} doküman bulundu
             {searchTerm && ` "${searchTerm}" araması için`}
             {selectedDocuments.length > 0 && ` (${selectedDocuments.length} seçili)`}
           </CardDescription>
+            </div>
+            
+            {/* Sıralama ve Sayfa Başına Kayıt */}
+            <div className="flex items-center gap-2">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Sırala" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="title">Başlık</SelectItem>
+                  <SelectItem value="code">Kod</SelectItem>
+                  <SelectItem value="createdAt">Oluşturma Tarihi</SelectItem>
+                  <SelectItem value="updatedAt">Güncelleme Tarihi</SelectItem>
+                  <SelectItem value="fileSize">Dosya Boyutu</SelectItem>
+                  <SelectItem value="author">Yazar</SelectItem>
+                  <SelectItem value="status">Durum</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+              >
+                {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+              </Button>
+              
+              <Select value={itemsPerPage.toString()} onValueChange={(value) => handleItemsPerPageChange(parseInt(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
+          {/* Görünüm Modlarına Göre İçerik */}
+          {viewMode === "list" && (
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox
-                      checked={selectedDocuments.length === filteredDocuments.length && filteredDocuments.length > 0}
+                      checked={selectedDocuments.length === paginatedDocuments.length && paginatedDocuments.length > 0}
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
                   <TableHead>Doküman</TableHead>
                   <TableHead>Kategori</TableHead>
                   <TableHead>Durum</TableHead>
-                  <TableHead>Sahibi</TableHead>
+                  <TableHead>Yazar</TableHead>
                   <TableHead>Versiyon</TableHead>
+                  <TableHead>Güvenlik</TableHead>
                   <TableHead>Son Güncelleme</TableHead>
                   <TableHead className="text-right">İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocuments.map((document) => (
+                {paginatedDocuments.map((document) => (
                   <TableRow key={document.id}>
                     <TableCell>
                       <Checkbox
@@ -552,8 +1232,9 @@ export default function DocumentsPage() {
                     <TableCell>
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{document.documentCode}</span>
+                          {getStatusIcon(document.status)}
+                          <span className="font-medium">{document.code}</span>
+                          {document.isExternal && <ExternalLink className="h-3 w-3 text-blue-500" />}
                         </div>
                         <Link href={`/documents/${document.id}`} className="hover:underline">
                           <p className="text-sm font-medium text-foreground hover:text-primary cursor-pointer">
@@ -562,29 +1243,49 @@ export default function DocumentsPage() {
                         </Link>
                         <p className="text-xs text-muted-foreground line-clamp-2">{document.description}</p>
                         <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                          <span className="flex items-center space-x-1">
-                            <Building className="h-3 w-3" />
-                            <span>{document.department.name}</span>
-                          </span>
                           <span>{formatFileSize(document.fileSize)}</span>
                           <span className="uppercase">{document.fileType}</span>
+                          {document.digitalSignature.signed && (
+                            <span className="flex items-center space-x-1 text-green-600">
+                              <Shield className="h-3 w-3" />
+                              <span>İmzalı</span>
+                            </span>
+                          )}
                         </div>
+                        {document.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {document.tags.slice(0, 3).map((tag, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                            {document.tags.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{document.tags.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-mono">
+                      <Badge 
+                        variant="outline" 
+                        className="font-mono"
+                        style={{ borderColor: document.category.color, color: document.category.color }}
+                      >
                         {document.category.code}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={statusColors[document.status as keyof typeof statusColors]}>
-                        {statusLabels[document.status as keyof typeof statusLabels]}
+                      <Badge variant={getStatusVariant(document.status) as any}>
+                        {getStatusText(document.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{document.owner.name}</span>
+                        <span className="text-sm">{document.author}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -592,8 +1293,14 @@ export default function DocumentsPage() {
                         onClick={() => showVersionHistory(document)}
                         className="font-mono hover:text-primary hover:underline cursor-pointer"
                       >
-                        v{document.currentVersion}
+                        {document.version}
                       </button>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Shield className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm capitalize">{document.securityLevel}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -602,9 +1309,50 @@ export default function DocumentsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
+                      <div className="flex items-center justify-end space-x-1">
+                        {/* Workflow Durumu */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedDocumentForWorkflow(document)
+                            setIsWorkflowDialogOpen(true)
+                          }}
+                          className="h-8 w-8 p-0"
+                          title="Workflow Durumu"
+                        >
+                          <Activity className="h-4 w-4" />
+                        </Button>
+                        
+                        {/* Değişiklik Kontrolü */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedDocumentForChange(document)
+                            setIsChangeControlDialogOpen(true)
+                          }}
+                          className="h-8 w-8 p-0"
+                          title="Değişiklik Kontrolü"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                        
+                        {/* Versiyon Geçmişi */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => showVersionHistory(document)}
+                          className="h-8 w-8 p-0"
+                          title="Versiyon Geçmişi"
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
+                        
+                        {/* İşlemler Menüsü */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -635,11 +1383,412 @@ export default function DocumentsPage() {
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            </div>
+          )}
+
+          {/* Grid Görünümü */}
+          {viewMode === "grid" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedDocuments.map((document) => (
+                <Card key={document.id} className="relative">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={selectedDocuments.includes(document.id)}
+                          onCheckedChange={() => handleSelectDocument(document.id)}
+                        />
+                        {getStatusIcon(document.status)}
+                        <span className="font-medium text-sm">{document.code}</span>
+                        {document.isExternal && <ExternalLink className="h-3 w-3 text-blue-500" />}
+                      </div>
+                      <Badge 
+                        variant="outline" 
+                        className="font-mono text-xs"
+                        style={{ borderColor: document.category.color, color: document.category.color }}
+                      >
+                        {document.category.code}
+                      </Badge>
+                    </div>
+                    <CardTitle className="text-base">
+                      <Link href={`/documents/${document.id}`} className="hover:underline">
+                        {document.title}
+                      </Link>
+                    </CardTitle>
+                    <CardDescription className="text-xs line-clamp-2">
+                      {document.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-1">
+                          <User className="h-3 w-3 text-muted-foreground" />
+                          <span>{document.author}</span>
+                        </div>
+                        <Badge variant={getStatusVariant(document.status) as any} className="text-xs">
+                          {getStatusText(document.status)}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDate(document.updatedAt)}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Shield className="h-3 w-3" />
+                          <span className="capitalize">{document.securityLevel}</span>
+                        </div>
+                      </div>
+                      
+                      {document.tags && document.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {document.tags.slice(0, 2).map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {document.tags.length > 2 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{document.tags.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+          </div>
+        </CardContent>
+                  <div className="absolute top-2 right-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => window.open(`/documents/${document.id}`, '_blank')}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Görüntüle
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePDFDownload(document)}>
+                          <Download className="h-4 w-4 mr-2" />
+                          İndir
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => showVersionHistory(document)}>
+                          <GitCompare className="h-4 w-4 mr-2" />
+                          Versiyon Geçmişi
+                        </DropdownMenuItem>
+                        {canEdit(document) && (
+                          <DropdownMenuItem onClick={() => window.open(`/documents/${document.id}/edit`, '_blank')}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Düzenle
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Tree Görünümü - Gerçek Hiyerarşik Yapı */}
+          {viewMode === "tree" && (
+            <div className="space-y-1">
+              {categoryStats.map((category) => {
+                const categoryDocuments = paginatedDocuments.filter(doc => doc.category.name === category.category)
+                if (categoryDocuments.length === 0) return null
+                
+                return (
+                  <div key={category.category} className="border rounded-lg">
+                    {/* Kategori Header */}
+                    <div className="flex items-center justify-between p-3 bg-gray-50 border-b">
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        ></div>
+                        <span className="font-medium text-sm">{category.category}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {categoryDocuments.length}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-muted-foreground">
+                          {categoryDocuments.filter(doc => doc.status === "approved").length} onaylandı
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Kategori Altındaki Dokümanlar */}
+                    <div className="divide-y">
+                      {categoryDocuments.map((document, index) => (
+                        <div key={document.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50">
+                          {/* Tree Line */}
+                          <div className="flex items-center space-x-1">
+                            {index === categoryDocuments.length - 1 ? (
+                              <div className="w-4 h-4 flex items-center justify-center">
+                                <div className="w-px h-3 bg-gray-300"></div>
+                                <div className="w-2 h-px bg-gray-300"></div>
+                              </div>
+                            ) : (
+                              <div className="w-4 h-4 flex items-center justify-center">
+                                <div className="w-px h-6 bg-gray-300"></div>
+                                <div className="w-2 h-px bg-gray-300"></div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <Checkbox
+                            checked={selectedDocuments.includes(document.id)}
+                            onCheckedChange={() => handleSelectDocument(document.id)}
+                          />
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2">
+                              {getStatusIcon(document.status)}
+                              <span className="font-medium text-sm">{document.code}</span>
+                              {document.isExternal && <ExternalLink className="h-3 w-3 text-blue-500" />}
+                            </div>
+                            <Link href={`/documents/${document.id}`} className="hover:underline">
+                              <p className="text-sm font-medium text-foreground hover:text-primary cursor-pointer">
+                                {document.title}
+                              </p>
+                            </Link>
+                            <p className="text-xs text-muted-foreground line-clamp-1">{document.description}</p>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={getStatusVariant(document.status) as any} className="text-xs">
+                              {getStatusText(document.status)}
+                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => window.open(`/documents/${document.id}`, '_blank')}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Görüntüle
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handlePDFDownload(document)}>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  İndir
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => showVersionHistory(document)}>
+                                  <GitCompare className="h-4 w-4 mr-2" />
+                                  Versiyon Geçmişi
+                                </DropdownMenuItem>
+                                {canEdit(document) && (
+                                  <DropdownMenuItem onClick={() => window.open(`/documents/${document.id}/edit`, '_blank')}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Düzenle
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Timeline Görünümü */}
+          {viewMode === "timeline" && (
+            <div className="space-y-4">
+              {paginatedDocuments.map((document, index) => (
+                <div key={document.id} className="relative flex items-start space-x-4">
+                  {/* Timeline Line */}
+                  {index < paginatedDocuments.length - 1 && (
+                    <div className="absolute left-4 top-8 w-px h-16 bg-gray-200"></div>
+                  )}
+                  
+                  {/* Timeline Dot */}
+                  <div className="relative z-10 flex items-center justify-center w-8 h-8 bg-white border-2 border-gray-300 rounded-full">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: document.category.color }}
+                    ></div>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Checkbox
+                        checked={selectedDocuments.includes(document.id)}
+                        onCheckedChange={() => handleSelectDocument(document.id)}
+                      />
+                      {getStatusIcon(document.status)}
+                      <span className="font-medium text-sm">{document.code}</span>
+                      {document.isExternal && <ExternalLink className="h-3 w-3 text-blue-500" />}
+                      <Badge 
+                        variant="outline" 
+                        className="font-mono text-xs"
+                        style={{ borderColor: document.category.color, color: document.category.color }}
+                      >
+                        {document.category.code}
+                      </Badge>
+                    </div>
+                    
+                    <Link href={`/documents/${document.id}`} className="hover:underline">
+                      <h3 className="text-base font-medium text-foreground hover:text-primary cursor-pointer">
+                        {document.title}
+                      </h3>
+                    </Link>
+                    
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      {document.description}
+                    </p>
+                    
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                        <div className="flex items-center space-x-1">
+                          <User className="h-3 w-3" />
+                          <span>{document.author}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDate(document.updatedAt)}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Shield className="h-3 w-3" />
+                          <span className="capitalize">{document.securityLevel}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={getStatusVariant(document.status) as any} className="text-xs">
+                          {getStatusText(document.status)}
+                        </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => window.open(`/documents/${document.id}`, '_blank')}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Görüntüle
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handlePDFDownload(document)}>
+                              <Download className="h-4 w-4 mr-2" />
+                              İndir
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => showVersionHistory(document)}>
+                              <GitCompare className="h-4 w-4 mr-2" />
+                              Versiyon Geçmişi
+                            </DropdownMenuItem>
+                            {canEdit(document) && (
+                              <DropdownMenuItem onClick={() => window.open(`/documents/${document.id}/edit`, '_blank')}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Düzenle
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Pagination - Subtle ve Kompakt */}
+          <div className="pt-2">
+            <div className="flex justify-end">
+              <div className="flex items-center gap-2 bg-white/50 border border-gray-100 rounded-md px-3 py-1.5 text-xs">
+                {/* Sayfa Başına Kayıt */}
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground">Sayfa:</span>
+                  <Select value={itemsPerPage.toString()} onValueChange={(value) => handleItemsPerPageChange(parseInt(value))}>
+                    <SelectTrigger className="w-12 h-6 text-xs border-0 bg-transparent p-0 h-auto">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Kayıt Bilgisi */}
+                <div className="text-muted-foreground hidden sm:block">
+                  {startIndex + 1}-{Math.min(endIndex, sortedDocuments.length)}/{sortedDocuments.length}
+                </div>
+
+                {/* Pagination Butonları */}
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="h-6 w-6 p-0 hover:bg-gray-100"
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                  </Button>
+                  
+                  <div className="flex items-center gap-0.5">
+                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                      let pageNumber
+                      if (totalPages <= 3) {
+                        pageNumber = i + 1
+                      } else if (currentPage <= 2) {
+                        pageNumber = i + 1
+                      } else if (currentPage >= totalPages - 1) {
+                        pageNumber = totalPages - 2 + i
+                      } else {
+                        pageNumber = currentPage - 1 + i
+                      }
+                      
+                      const isActive = pageNumber === currentPage
+                      
+                      return (
+                        <Button
+                          key={pageNumber}
+                          variant={isActive ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => handlePageChange(pageNumber)}
+                          className={`h-6 w-6 p-0 text-xs ${
+                            isActive 
+                              ? "bg-gray-900 text-white hover:bg-gray-800" 
+                              : "hover:bg-gray-100"
+                          }`}
+                        >
+                          {pageNumber}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="h-6 w-6 p-0 hover:bg-gray-100"
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -734,8 +1883,8 @@ export default function DocumentsPage() {
                       <span className="font-medium">{doc?.code}</span>
                       <span className="text-muted-foreground ml-2">{doc?.title}</span>
                     </div>
-                    <Badge variant="outline" className={statusColors[doc?.status as keyof typeof statusColors]}>
-                      {statusLabels[doc?.status as keyof typeof statusLabels]}
+                    <Badge variant={getStatusVariant(doc?.status) as any}>
+                      {getStatusText(doc?.status)}
                     </Badge>
                   </div>
                 ))}
@@ -809,4 +1958,103 @@ export default function DocumentsPage() {
       </Dialog>
     </div>
   )
+}
+
+// Çoklu Seviye Hiyerarşi Fonksiyonları
+const toggleCategoryExpansion = (categoryId: string, expandedCategories: Set<string>, setExpandedCategories: React.Dispatch<React.SetStateAction<Set<string>>>) => {
+  setExpandedCategories(prev => {
+    const newSet = new Set(prev)
+    if (newSet.has(categoryId)) {
+      newSet.delete(categoryId)
+    } else {
+      newSet.add(categoryId)
+    }
+    return newSet
+  })
+}
+
+const handleDragStart = (document: Document, setDraggedDocument: React.Dispatch<React.SetStateAction<Document | null>>) => {
+  setDraggedDocument(document)
+}
+
+const handleDragOver = (e: React.DragEvent, targetId: string, setDropTarget: React.Dispatch<React.SetStateAction<string | null>>) => {
+  e.preventDefault()
+  setDropTarget(targetId)
+}
+
+const handleDragLeave = (setDropTarget: React.Dispatch<React.SetStateAction<string | null>>) => {
+  setDropTarget(null)
+}
+
+const handleDrop = (e: React.DragEvent, targetCategory: string, draggedDocument: Document | null, documents: Document[], setDocuments: React.Dispatch<React.SetStateAction<Document[]>>, setDraggedDocument: React.Dispatch<React.SetStateAction<Document | null>>, setDropTarget: React.Dispatch<React.SetStateAction<string | null>>) => {
+  e.preventDefault()
+  if (draggedDocument) {
+    // Dokümanı yeni kategoriye taşı
+    const updatedDocuments = documents.map(doc => 
+      doc.id === draggedDocument.id 
+        ? { ...doc, category: { ...doc.category, name: targetCategory } }
+        : doc
+    )
+    setDocuments(updatedDocuments)
+  }
+  setDraggedDocument(null)
+  setDropTarget(null)
+}
+
+const buildHierarchicalStructure = (docs: Document[], expandedCategories: Set<string>) => {
+  // Kategorilere göre grupla
+  const categoryGroups = docs.reduce((acc, doc) => {
+    const categoryName = doc.category.name
+    if (!acc[categoryName]) {
+      acc[categoryName] = []
+    }
+    acc[categoryName].push(doc)
+    return acc
+  }, {} as Record<string, Document[]>)
+
+  // Hiyerarşik yapı oluştur
+  const hierarchical: Document[] = []
+  Object.entries(categoryGroups).forEach(([categoryName, categoryDocs]) => {
+    // Kategori başlığı oluştur
+    const categoryHeader: Document = {
+      id: `category-${categoryName}`,
+      code: categoryName,
+      title: categoryName,
+      category: { id: categoryName, code: categoryName, name: categoryName, color: "#6B7280", icon: "Folder" },
+      version: "",
+      status: "category",
+      description: `${categoryDocs.length} doküman`,
+      content: "",
+      author: "",
+      reviewer: "",
+      approver: null,
+      createdAt: "",
+      updatedAt: "",
+      publishedAt: null,
+      nextReviewDate: null,
+      distributionList: [],
+      relatedDocuments: [],
+      tags: [],
+      fileSize: 0,
+      fileType: "",
+      isActive: true,
+      workflow: { currentStep: "category", steps: [] },
+      changeControl: { changeRequestId: "", changeReason: "", impactAnalysis: "", changeApprovedBy: "", changeApprovedDate: "" },
+      retentionPeriod: 0,
+      securityLevel: "internal",
+      isExternal: false,
+      externalSource: null,
+      digitalSignature: { signed: false, signer: null, signatureDate: null, certificateValid: false },
+      parentId: null,
+      children: categoryDocs,
+      level: 0,
+      isExpanded: expandedCategories.has(categoryName),
+      sortOrder: 0,
+      isDragging: false,
+      isDropTarget: false
+    }
+    hierarchical.push(categoryHeader)
+  })
+
+  return hierarchical
 }
