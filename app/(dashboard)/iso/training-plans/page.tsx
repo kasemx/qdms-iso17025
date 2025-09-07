@@ -2453,7 +2453,7 @@ Kalite Yönetim Sistemi
         </CardContent>
         
         {/* Pagination - Subtle ve Kompakt */}
-        <div className="border-t pt-3">
+        <div className="pt-2">
           <div className="flex justify-end">
             <div className="flex items-center gap-2 bg-white/50 border border-gray-100 rounded-md px-3 py-1.5 text-xs">
               {/* Sayfa Başına Kayıt */}
