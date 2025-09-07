@@ -2452,15 +2452,15 @@ Kalite Yönetim Sistemi
           )}
         </CardContent>
         
-        {/* Pagination - Tablo içinde entegre */}
-        <div className="border-t pt-4">
+        {/* Pagination - Subtle ve Kompakt */}
+        <div className="border-t pt-3">
           <div className="flex justify-end">
-            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2">
+            <div className="flex items-center gap-2 bg-white/50 border border-gray-100 rounded-md px-3 py-1.5 text-xs">
               {/* Sayfa Başına Kayıt */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Sayfa:</span>
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Sayfa:</span>
                 <Select value={itemsPerPage.toString()} onValueChange={(value) => handleItemsPerPageChange(parseInt(value))}>
-                  <SelectTrigger className="w-16 h-8 text-xs">
+                  <SelectTrigger className="w-12 h-6 text-xs border-0 bg-transparent p-0 h-auto">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -2473,23 +2473,23 @@ Kalite Yönetim Sistemi
               </div>
 
               {/* Kayıt Bilgisi */}
-              <div className="text-xs text-muted-foreground hidden sm:block">
-                {startIndex + 1}-{Math.min(endIndex, filteredPlans.length)} / {filteredPlans.length}
+              <div className="text-muted-foreground hidden sm:block">
+                {startIndex + 1}-{Math.min(endIndex, filteredPlans.length)}/{filteredPlans.length}
               </div>
 
               {/* Pagination Butonları */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="h-8 w-8 p-0"
+                  className="h-6 w-6 p-0 hover:bg-gray-100"
                 >
                   <ChevronLeft className="h-3 w-3" />
                 </Button>
                 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                   {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
                     let pageNumber
                     if (totalPages <= 3) {
@@ -2505,10 +2505,10 @@ Kalite Yönetim Sistemi
                     return (
                       <Button
                         key={pageNumber}
-                        variant={currentPage === pageNumber ? "default" : "outline"}
+                        variant={currentPage === pageNumber ? "default" : "ghost"}
                         size="sm"
                         onClick={() => handlePageChange(pageNumber)}
-                        className="h-8 w-8 p-0 text-xs"
+                        className="h-6 w-6 p-0 text-xs hover:bg-gray-100"
                       >
                         {pageNumber}
                       </Button>
@@ -2517,11 +2517,11 @@ Kalite Yönetim Sistemi
                 </div>
 
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="h-8 w-8 p-0"
+                  className="h-6 w-6 p-0 hover:bg-gray-100"
                 >
                   <ChevronRight className="h-3 w-3" />
                 </Button>
