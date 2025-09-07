@@ -2451,83 +2451,85 @@ Kalite Yönetim Sistemi
             </div>
           )}
         </CardContent>
-      </Card>
+        
+        {/* Pagination - Tablo içinde entegre */}
+        <div className="border-t pt-4">
+          <div className="flex justify-end">
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2">
+              {/* Sayfa Başına Kayıt */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Sayfa:</span>
+                <Select value={itemsPerPage.toString()} onValueChange={(value) => handleItemsPerPageChange(parseInt(value))}>
+                  <SelectTrigger className="w-16 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-      {/* Kompakt Pagination - Sağ Alt Köşe */}
-      <div className="flex justify-end">
-        <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2 shadow-sm">
-          {/* Sayfa Başına Kayıt */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Sayfa:</span>
-            <Select value={itemsPerPage.toString()} onValueChange={(value) => handleItemsPerPageChange(parseInt(value))}>
-              <SelectTrigger className="w-16 h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              {/* Kayıt Bilgisi */}
+              <div className="text-xs text-muted-foreground hidden sm:block">
+                {startIndex + 1}-{Math.min(endIndex, filteredPlans.length)} / {filteredPlans.length}
+              </div>
 
-          {/* Kayıt Bilgisi */}
-          <div className="text-xs text-muted-foreground hidden sm:block">
-            {startIndex + 1}-{Math.min(endIndex, filteredPlans.length)} / {filteredPlans.length}
-          </div>
-
-          {/* Pagination Butonları */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronLeft className="h-3 w-3" />
-            </Button>
-            
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                let pageNumber
-                if (totalPages <= 3) {
-                  pageNumber = i + 1
-                } else if (currentPage <= 2) {
-                  pageNumber = i + 1
-                } else if (currentPage >= totalPages - 1) {
-                  pageNumber = totalPages - 2 + i
-                } else {
-                  pageNumber = currentPage - 1 + i
-                }
+              {/* Pagination Butonları */}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                </Button>
                 
-                return (
-                  <Button
-                    key={pageNumber}
-                    variant={currentPage === pageNumber ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePageChange(pageNumber)}
-                    className="h-8 w-8 p-0 text-xs"
-                  >
-                    {pageNumber}
-                  </Button>
-                )
-              })}
-            </div>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                    let pageNumber
+                    if (totalPages <= 3) {
+                      pageNumber = i + 1
+                    } else if (currentPage <= 2) {
+                      pageNumber = i + 1
+                    } else if (currentPage >= totalPages - 1) {
+                      pageNumber = totalPages - 2 + i
+                    } else {
+                      pageNumber = currentPage - 1 + i
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNumber}
+                        variant={currentPage === pageNumber ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNumber)}
+                        className="h-8 w-8 p-0 text-xs"
+                      >
+                        {pageNumber}
+                      </Button>
+                    )
+                  })}
+                </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronRight className="h-3 w-3" />
-            </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Eğitim Detay Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
