@@ -1,16 +1,13 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Shield, Search, Calendar, User, Activity, AlertTriangle, Eye } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { toast } from "sonner"
+import { AuditHeader } from "@/components/audit/audit-header"
+import { AuditStats } from "@/components/audit/audit-stats"
+import { AuditFilters } from "@/components/audit/audit-filters"
+import { AuditTable } from "@/components/audit/audit-table"
+import { AuditDialogs } from "@/components/audit/audit-dialogs"
+import { PageLayout, LoadingState } from "@/components/common"
 
 interface AuditEntry {
   id: string
@@ -29,10 +26,12 @@ export default function AuditTrailPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>("all")
   const [actionFilter, setActionFilter] = useState<string>("all")
+  const [dateFilter, setDateFilter] = useState<string>("all")
   const [selectedEntry, setSelectedEntry] = useState<AuditEntry | null>(null)
   const [showDetailDialog, setShowDetailDialog] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
 
-  // Mock data - gerçek uygulamada API'den gelecek
+  // Enhanced mock data with more comprehensive audit entries
   useEffect(() => {
     const mockEntries: AuditEntry[] = [
       {
@@ -85,6 +84,76 @@ export default function AuditTrailPage() {
         ipAddress: "192.168.1.90",
         createdAt: "2024-01-19T11:10:00Z",
       },
+      {
+        id: "6",
+        entityType: "security",
+        entityId: "sec-001",
+        action: "login",
+        userName: "Ayşe Kaya",
+        changeSummary: "Başarılı giriş yapıldı",
+        ipAddress: "192.168.1.105",
+        createdAt: "2024-01-18T08:30:00Z",
+      },
+      {
+        id: "7",
+        entityType: "document",
+        entityId: "doc-456",
+        action: "document_delete",
+        userName: "Admin",
+        changeSummary: "Eski prosedür dokümanı silindi - TL-002",
+        ipAddress: "192.168.1.1",
+        createdAt: "2024-01-17T15:22:00Z",
+      },
+      {
+        id: "8",
+        entityType: "workflow",
+        entityId: "workflow-888",
+        action: "workflow_approved",
+        userName: "Kalite Sorumlusu",
+        changeSummary: "Doküman onay iş akışı tamamlandı - DOC-2024-001",
+        ipAddress: "192.168.1.88",
+        createdAt: "2024-01-16T13:45:00Z",
+      },
+      {
+        id: "9",
+        entityType: "security",
+        entityId: "sec-002",
+        action: "password_change",
+        userName: "Fatma Öztürk",
+        changeSummary: "Kullanıcı şifresini değiştirdi",
+        ipAddress: "192.168.1.111",
+        createdAt: "2024-01-15T17:30:00Z",
+      },
+      {
+        id: "10",
+        entityType: "document",
+        entityId: "doc-777",
+        action: "document_archive",
+        userName: "Arşiv Sorumlusu",
+        changeSummary: "Eski sürüm dokümanı arşivlendi - PR-005 v1.2",
+        ipAddress: "192.168.1.200",
+        createdAt: "2024-01-15T10:15:00Z",
+      },
+      {
+        id: "11",
+        entityType: "user",
+        entityId: "user-999",
+        action: "account_created",
+        userName: "Sistem Yöneticisi",
+        changeSummary: "Yeni kullanıcı hesabı oluşturuldu - Can Yıldız",
+        ipAddress: "192.168.1.50",
+        createdAt: "2024-01-14T09:20:00Z",
+      },
+      {
+        id: "12",
+        entityType: "training",
+        entityId: "training-555",
+        action: "training_failed",
+        userName: "Ali Vural",
+        changeSummary: "TL-003 eğitimi başarısız - Puan: 45 (Min: 70)",
+        ipAddress: "192.168.1.130",
+        createdAt: "2024-01-13T16:40:00Z",
+      },
     ]
 
     setTimeout(() => {
@@ -93,278 +162,135 @@ export default function AuditTrailPage() {
     }, 1000)
   }, [])
 
-  const getEntityTypeLabel = (type: string) => {
-    const types = {
-      document: "Doküman",
-      user: "Kullanıcı",
-      training: "Eğitim",
-      reminder: "Hatırlatıcı",
-      workflow: "İş Akışı",
-      security: "Güvenlik",
-    }
-    return types[type as keyof typeof types] || type
-  }
+  // Enhanced filtering with useMemo for better performance
+  const filteredEntries = useMemo(() => {
+    return auditEntries.filter((entry) => {
+      const matchesSearch =
+        entry.changeSummary?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.entityId.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      const matchesEntityType = entityTypeFilter === "all" || entry.entityType === entityTypeFilter
+      const matchesAction = actionFilter === "all" || entry.action === actionFilter
+      
+      // Date filtering
+      let matchesDate = true
+      if (dateFilter !== "all") {
+        const entryDate = new Date(entry.createdAt)
+        const today = new Date()
+        
+        switch (dateFilter) {
+          case "today":
+            matchesDate = entryDate.toDateString() === today.toDateString()
+            break
+          case "week":
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+            matchesDate = entryDate >= weekAgo
+            break
+          case "month":
+            const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+            matchesDate = entryDate >= monthAgo
+            break
+        }
+      }
 
-  const getActionLabel = (action: string) => {
-    const actions = {
-      document_create: "Doküman Oluşturma",
-      document_update: "Doküman Güncelleme",
-      document_delete: "Doküman Silme",
-      document_rollback: "Doküman Geri Alma",
-      user_create: "Kullanıcı Oluşturma",
-      user_update: "Kullanıcı Güncelleme",
-      role_change: "Rol Değişikliği",
-      training_completed: "Eğitim Tamamlama",
-      reminder_created: "Hatırlatıcı Oluşturma",
-      login: "Giriş",
-      logout: "Çıkış",
-    }
-    return actions[action as keyof typeof actions] || action
-  }
-
-  const getActionColor = (action: string) => {
-    if (action.includes("delete") || action.includes("rollback")) {
-      return "bg-red-100 text-red-800"
-    }
-    if (action.includes("create") || action.includes("completed")) {
-      return "bg-green-100 text-green-800"
-    }
-    if (action.includes("update") || action.includes("change")) {
-      return "bg-yellow-100 text-yellow-800"
-    }
-    return "bg-blue-100 text-blue-800"
-  }
-
-  const isCriticalAction = (action: string) => {
-    const criticalActions = ["document_delete", "document_rollback", "role_change", "user_delete"]
-    return criticalActions.includes(action)
-  }
-
-  const filteredEntries = auditEntries.filter((entry) => {
-    const matchesSearch =
-      entry.changeSummary?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.action.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesEntityType = entityTypeFilter === "all" || entry.entityType === entityTypeFilter
-    const matchesAction = actionFilter === "all" || entry.action === actionFilter
-
-    return matchesSearch && matchesEntityType && matchesAction
-  })
+      return matchesSearch && matchesEntityType && matchesAction && matchesDate
+    })
+  }, [auditEntries, searchTerm, entityTypeFilter, actionFilter, dateFilter])
 
   const handleViewDetails = (entry: AuditEntry) => {
     setSelectedEntry(entry)
     setShowDetailDialog(true)
   }
 
+  const handleGenerateReport = async () => {
+    try {
+      setExportLoading(true)
+      
+      // Simulate report generation
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Create CSV content
+      const csvContent = [
+        ['Tarih/Saat', 'Kullanıcı', 'İşlem', 'Entity Tipi', 'Açıklama', 'IP Adresi'].join(','),
+        ...filteredEntries.map(entry => [
+          new Date(entry.createdAt).toLocaleString('tr-TR'),
+          entry.userName,
+          entry.action,
+          entry.entityType,
+          `"${entry.changeSummary || '-'}"`,
+          entry.ipAddress || '-'
+        ].join(','))
+      ].join('\n')
+      
+      // Download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `audit-trail-${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      toast.success('Audit raporu başarıyla oluşturuldu ve indirildi')
+    } catch (error) {
+      console.error('Report generation error:', error)
+      toast.error('Rapor oluşturulurken hata oluştu')
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <PageLayout
+        title="Audit Trail"
+        description="Sistem aktivitelerini ve değişikliklerini takip edin"
+      >
+        <LoadingState type="page" />
+      </PageLayout>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-balance">Audit Trail</h1>
-          <p className="text-muted-foreground">Sistem aktivitelerini izleyin ve denetleyin</p>
-        </div>
-        <Button variant="outline">
-          <Calendar className="mr-2 h-4 w-4" />
-          Rapor Oluştur
-        </Button>
-      </div>
+    <PageLayout
+      title="Audit Trail"
+      description="Sistem aktivitelerini ve değişikliklerini takip edin"
+      actions={
+        <AuditHeader 
+          onGenerateReport={handleGenerateReport}
+          exportLoading={exportLoading}
+          totalEntries={auditEntries.length}
+          filteredEntries={filteredEntries.length}
+        />
+      }
+    >
+      <AuditStats auditEntries={auditEntries} />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Aktivite</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{auditEntries.length}</div>
-            <p className="text-xs text-muted-foreground">Son 30 gün</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Kritik İşlem</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {auditEntries.filter((e) => isCriticalAction(e.action)).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Dikkat gerektirir</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aktif Kullanıcı</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{new Set(auditEntries.map((e) => e.userName)).size}</div>
-            <p className="text-xs text-muted-foreground">Benzersiz kullanıcı</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Doküman İşlemi</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{auditEntries.filter((e) => e.entityType === "document").length}</div>
-            <p className="text-xs text-muted-foreground">Doküman aktivitesi</p>
-          </CardContent>
-        </Card>
-      </div>
+      <AuditFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        entityTypeFilter={entityTypeFilter}
+        onEntityTypeFilterChange={setEntityTypeFilter}
+        actionFilter={actionFilter}
+        onActionFilterChange={setActionFilter}
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
+      />
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Audit kayıtlarında ara..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={entityTypeFilter} onValueChange={setEntityTypeFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Entity tipi" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tüm Tipler</SelectItem>
-            <SelectItem value="document">Doküman</SelectItem>
-            <SelectItem value="user">Kullanıcı</SelectItem>
-            <SelectItem value="training">Eğitim</SelectItem>
-            <SelectItem value="reminder">Hatırlatıcı</SelectItem>
-            <SelectItem value="workflow">İş Akışı</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={actionFilter} onValueChange={setActionFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="İşlem tipi" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tüm İşlemler</SelectItem>
-            <SelectItem value="document_create">Doküman Oluşturma</SelectItem>
-            <SelectItem value="document_update">Doküman Güncelleme</SelectItem>
-            <SelectItem value="document_rollback">Doküman Geri Alma</SelectItem>
-            <SelectItem value="role_change">Rol Değişikliği</SelectItem>
-            <SelectItem value="training_completed">Eğitim Tamamlama</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <AuditTable
+        auditEntries={filteredEntries}
+        onViewDetails={handleViewDetails}
+      />
 
-      {/* Audit Trail Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Audit Kayıtları</CardTitle>
-          <CardDescription>Sistem aktivitelerinin detaylı kayıtları</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tarih/Saat</TableHead>
-                <TableHead>Kullanıcı</TableHead>
-                <TableHead>İşlem</TableHead>
-                <TableHead>Entity</TableHead>
-                <TableHead>Açıklama</TableHead>
-                <TableHead>IP Adresi</TableHead>
-                <TableHead>İşlemler</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEntries.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell className="font-mono text-sm">
-                    {new Date(entry.createdAt).toLocaleString("tr-TR")}
-                  </TableCell>
-                  <TableCell className="font-medium">{entry.userName}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getActionColor(entry.action)}>{getActionLabel(entry.action)}</Badge>
-                      {isCriticalAction(entry.action) && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{getEntityTypeLabel(entry.entityType)}</Badge>
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">{entry.changeSummary || "-"}</TableCell>
-                  <TableCell className="font-mono text-sm">{entry.ipAddress || "-"}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm" onClick={() => handleViewDetails(entry)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Detail Dialog */}
-      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Audit Kaydı Detayları</DialogTitle>
-            <DialogDescription>Seçilen audit kaydının detaylı bilgileri</DialogDescription>
-          </DialogHeader>
-          {selectedEntry && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Tarih/Saat</Label>
-                  <p className="font-mono">{new Date(selectedEntry.createdAt).toLocaleString("tr-TR")}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Kullanıcı</Label>
-                  <p className="font-medium">{selectedEntry.userName}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">İşlem</Label>
-                  <Badge className={getActionColor(selectedEntry.action)}>{getActionLabel(selectedEntry.action)}</Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Entity Tipi</Label>
-                  <Badge variant="outline">{getEntityTypeLabel(selectedEntry.entityType)}</Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Entity ID</Label>
-                  <p className="font-mono text-sm">{selectedEntry.entityId}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">IP Adresi</Label>
-                  <p className="font-mono text-sm">{selectedEntry.ipAddress || "-"}</p>
-                </div>
-              </div>
-              {selectedEntry.changeSummary && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Değişiklik Özeti</Label>
-                  <p className="mt-1 p-3 bg-muted rounded-md">{selectedEntry.changeSummary}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {filteredEntries.length === 0 && (
-        <div className="text-center py-12">
-          <Shield className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-semibold">Audit kaydı bulunamadı</h3>
-          <p className="mt-2 text-muted-foreground">Arama kriterlerinize uygun audit kaydı bulunmuyor.</p>
-        </div>
-      )}
-    </div>
+      <AuditDialogs
+        showDetailDialog={showDetailDialog}
+        onCloseDetailDialog={() => setShowDetailDialog(false)}
+        selectedEntry={selectedEntry}
+      />
+    </PageLayout>
   )
 }

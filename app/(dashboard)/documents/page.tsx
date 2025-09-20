@@ -72,6 +72,7 @@ import {
 import Link from "next/link"
 import { mockApi } from "@/lib/mock-data"
 import { toast } from "sonner"
+import { PageLayout, LoadingState } from "@/components/common"
 
 // Interface tanımları
 interface Document {
@@ -747,13 +748,10 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dokümanlar</h1>
-          <p className="text-muted-foreground">ISO 17025 uyumlu doküman yönetim sistemi</p>
-        </div>
+    <PageLayout
+      title="Dokümanlar"
+      description="ISO 17025 uyumlu doküman yönetim sistemi"
+      actions={
         <div className="flex items-center space-x-2">
           {selectedDocuments.length > 0 && (
             <>
@@ -809,8 +807,8 @@ export default function DocumentsPage() {
             </Link>
           </Button>
         </div>
-      </div>
-
+      }
+    >
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -1956,7 +1954,7 @@ export default function DocumentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }
 

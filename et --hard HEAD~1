@@ -1,5 +1,0 @@
-[33mcc3f7de[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m feat: Move bulk operation buttons to table header for better organization and user experience
-[33mc6f4c4b[m fix: Fix New Plan button - use correct dialog state (isEditDialogOpen instead of isNewPlanDialogOpen)
-[33m575b21d[m feat: Remove pagination separator line for seamless integration with table
-[33meb41ce2[m feat: Make pagination more subtle and compact - reduced size and visual weight
-[33m37f1708[m feat: Integrate pagination inside table card for better visual cohesion

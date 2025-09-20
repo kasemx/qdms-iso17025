@@ -1,75 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Progress } from "@/components/ui/progress"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Search,
-  Filter,
-  Plus,
-  Calendar,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Settings,
-  Download,
-  Eye,
-  Edit,
-  MoreHorizontal,
-  BookOpen,
-  Users,
-  FileText,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  BarChart3,
-  Grid3X3,
-  List,
-  SortAsc,
-  SortDesc,
-  Award,
-  Target,
-  Star,
-  Brain,
-  Zap,
-  Shield,
-  Activity,
-  GraduationCap,
-  UserCheck,
-  UserX,
-  Play,
-  Pause,
-  RotateCcw,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Upload,
-  ChevronUp,
-  ChevronDown,
-  Mail,
-  Send,
-  Bell,
-} from "lucide-react"
 import { mockApi } from "@/lib/mock-data"
 import { toast } from "sonner"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { TrainingPlansHeader } from "@/components/training-plans/training-plans-header"
+import { TrainingPlansStats } from "@/components/training-plans/training-plans-stats"
+import { TrainingPlansFilters } from "@/components/training-plans/training-plans-filters"
+import { TrainingPlansList } from "@/components/training-plans/training-plans-list"
 
-interface TrainingPlan {
+export interface TrainingPlan {
   id: string
   title: string
   description: string
@@ -104,62 +44,34 @@ interface TrainingPlan {
 }
 
 export default function TrainingPlansPage() {
+  // Core state
   const [plans, setPlans] = useState<TrainingPlan[]>([])
   const [filteredPlans, setFilteredPlans] = useState<TrainingPlan[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Filter and search state
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [sortBy, setSortBy] = useState("startDate")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
-  const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null)
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isNewPlanDialogOpen, setIsNewPlanDialogOpen] = useState(false)
-  const [editingPlan, setEditingPlan] = useState<TrainingPlan | null>(null)
-  const [deletingPlan, setDeletingPlan] = useState<TrainingPlan | null>(null)
-  const [formData, setFormData] = useState<Partial<TrainingPlan>>({})
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [selectedPlans, setSelectedPlans] = useState<string[]>([])
-  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false)
-  const [isBulkStatusDialogOpen, setIsBulkStatusDialogOpen] = useState(false)
-  const [bulkStatus, setBulkStatus] = useState("")
   const [dateRange, setDateRange] = useState({ start: "", end: "" })
   const [costRange, setCostRange] = useState({ min: "", max: "" })
   const [participantRange, setParticipantRange] = useState({ min: "", max: "" })
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [instructorFilter, setInstructorFilter] = useState("")
+  
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [attachments, setAttachments] = useState<Record<string, File[]>>({})
-  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false)
-  const [selectedPlanForAttachment, setSelectedPlanForAttachment] = useState<TrainingPlan | null>(null)
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
-  const [exportFormat, setExportFormat] = useState("excel")
-  const [exportRange, setExportRange] = useState("all")
-  const [calendarView, setCalendarView] = useState(false)
-  const [selectedDate, setSelectedDate] = useState(new Date())
-  const [calendarMode, setCalendarMode] = useState<"month" | "week" | "day">("month")
-  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
-  const [emailRecipients, setEmailRecipients] = useState<string[]>([])
-  const [emailSubject, setEmailSubject] = useState("")
-  const [emailMessage, setEmailMessage] = useState("")
-  const [emailTemplate, setEmailTemplate] = useState("reminder")
-  const [currentUser, setCurrentUser] = useState({
-    id: "user-1",
-    name: "Admin User",
-    role: "admin",
-    permissions: ["read", "write", "delete", "export", "email"]
-  })
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [searchHistory, setSearchHistory] = useState<string[]>([])
-  const [popularSearches, setPopularSearches] = useState<string[]>([])
+  
+  // UI state
+  const [showFilters, setShowFilters] = useState(false)
   const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true)
-  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date())
+  
+  // Notification state
   const [updateNotifications, setUpdateNotifications] = useState<Array<{
     id: string
     type: 'created' | 'updated' | 'deleted' | 'status_changed'
@@ -168,77 +80,55 @@ export default function TrainingPlansPage() {
     planId: string
   }>>([])
   const [showUpdateNotification, setShowUpdateNotification] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
+  
+  // User state
+  const [currentUser, setCurrentUser] = useState({
+    id: "user-1",
+    name: "Admin User",
+    role: "admin",
+    permissions: ["read", "write", "delete", "export", "email"]
+  })
 
-  // Durum filtreleri
-  const statusFilters = [
-    { id: "all", name: "Tümü", count: 18 },
-    { id: "planned", name: "Planlandı", count: 6, color: "#3B82F6" },
-    { id: "ongoing", name: "Devam Ediyor", count: 4, color: "#F59E0B" },
-    { id: "completed", name: "Tamamlandı", count: 5, color: "#10B981" },
-    { id: "cancelled", name: "İptal Edildi", count: 2, color: "#EF4444" },
-    { id: "postponed", name: "Ertelendi", count: 1, color: "#8B5CF6" }
-  ]
-
-  // Kategori filtreleri
-  const categoryFilters = [
-    { id: "all", name: "Tümü", count: 18 },
-    { id: "technical", name: "Teknik", count: 8, color: "#3B82F6" },
-    { id: "safety", name: "Güvenlik", count: 4, color: "#EF4444" },
-    { id: "compliance", name: "Uyumluluk", count: 3, color: "#10B981" },
-    { id: "soft_skills", name: "Yumuşak Beceriler", count: 2, color: "#8B5CF6" },
-    { id: "leadership", name: "Liderlik", count: 1, color: "#F59E0B" }
-  ]
-
+  // Data fetching
   useEffect(() => {
     fetchData()
-    // Search history'yi localStorage'dan yükle
-    const savedHistory = localStorage.getItem('training-search-history')
-    if (savedHistory) {
-      setSearchHistory(JSON.parse(savedHistory))
-    }
-    // Popüler aramaları hesapla
-    setPopularSearches(getPopularSearches())
   }, [])
 
   useEffect(() => {
     filterPlans()
-  }, [plans, searchTerm, selectedStatus, selectedCategory, sortBy, sortOrder, dateRange, costRange, participantRange, priorityFilter, instructorFilter, currentUser])
-
-  // Real-time Updates useEffect
-  useEffect(() => {
-    if (!isRealTimeEnabled) return
-
-    const interval = setInterval(() => {
-      checkForUpdates()
-    }, 10000) // Her 10 saniyede bir kontrol et
-
-    return () => clearInterval(interval)
-  }, [isRealTimeEnabled])
-
-  // Real-time Updates için CRUD fonksiyonlarını güncelle
-  useEffect(() => {
-    // CRUD işlemlerinde real-time bildirimleri ekle
-    // Bu useEffect sadece component mount olduğunda çalışır
-  }, [])
+  }, [plans, searchTerm, selectedStatus, selectedCategory, sortBy, sortOrder, dateRange, costRange, participantRange, priorityFilter, instructorFilter])
 
   const fetchData = async () => {
     try {
       setIsLoading(true)
       const data = await mockApi.getTrainingPlans()
-      setPlans(data)
+      // Ensure all plans have required properties with default values
+      const plansWithDefaults = data.map((plan: any) => ({
+        ...plan,
+        notes: plan.notes || "",
+        objectives: plan.objectives || [],
+        materials: plan.materials || [],
+        prerequisites: plan.prerequisites || "",
+        assessmentMethod: plan.assessmentMethod || "",
+        passingScore: plan.passingScore || 0,
+        certificateIssued: plan.certificateIssued || false,
+        completionRate: plan.completionRate || 0,
+        satisfactionScore: plan.satisfactionScore || 0,
+        effectivenessScore: plan.effectivenessScore || 0
+      }))
+      setPlans(plansWithDefaults)
     } catch (error) {
       console.error("Error fetching training plans:", error)
+      toast.error("Veriler yüklenirken hata oluştu")
     } finally {
       setIsLoading(false)
     }
   }
 
   const filterPlans = () => {
-    let filtered = getRoleBasedPlans()
-    console.log("After role filtering:", filtered.length, "plans")
+    let filtered = [...plans]
 
-    // Arama filtresi
+    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(plan =>
         plan.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -247,20 +137,19 @@ export default function TrainingPlansPage() {
         plan.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         plan.category?.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      console.log("After search filtering:", filtered.length, "plans")
     }
 
-    // Durum filtresi
+    // Status filter
     if (selectedStatus !== "all") {
       filtered = filtered.filter(plan => plan.status === selectedStatus)
     }
 
-    // Kategori filtresi
+    // Category filter
     if (selectedCategory !== "all") {
       filtered = filtered.filter(plan => plan.category === selectedCategory)
     }
 
-    // Tarih aralığı filtresi
+    // Date range filter
     if (dateRange.start) {
       filtered = filtered.filter(plan => new Date(plan.startDate) >= new Date(dateRange.start))
     }
@@ -268,7 +157,7 @@ export default function TrainingPlansPage() {
       filtered = filtered.filter(plan => new Date(plan.startDate) <= new Date(dateRange.end))
     }
 
-    // Maliyet aralığı filtresi
+    // Cost range filter
     if (costRange.min) {
       filtered = filtered.filter(plan => plan.cost >= parseFloat(costRange.min))
     }
@@ -276,7 +165,7 @@ export default function TrainingPlansPage() {
       filtered = filtered.filter(plan => plan.cost <= parseFloat(costRange.max))
     }
 
-    // Katılımcı aralığı filtresi
+    // Participant range filter
     if (participantRange.min) {
       filtered = filtered.filter(plan => plan.maxParticipants >= parseInt(participantRange.min))
     }
@@ -284,19 +173,19 @@ export default function TrainingPlansPage() {
       filtered = filtered.filter(plan => plan.maxParticipants <= parseInt(participantRange.max))
     }
 
-    // Öncelik filtresi
+    // Priority filter
     if (priorityFilter !== "all") {
       filtered = filtered.filter(plan => plan.priority === priorityFilter)
     }
 
-    // Eğitmen filtresi
+    // Instructor filter
     if (instructorFilter) {
       filtered = filtered.filter(plan => 
         plan.instructor.toLowerCase().includes(instructorFilter.toLowerCase())
       )
     }
 
-    // Sıralama
+    // Sorting
     filtered.sort((a, b) => {
       let aValue: any, bValue: any
 
@@ -313,3070 +202,258 @@ export default function TrainingPlansPage() {
           aValue = new Date(a.endDate)
           bValue = new Date(b.endDate)
           break
-        case "completionRate":
-          aValue = a.completionRate
-          bValue = b.completionRate
-          break
-        case "satisfactionScore":
-          aValue = a.satisfactionScore
-          bValue = b.satisfactionScore
-          break
         case "cost":
           aValue = a.cost
           bValue = b.cost
           break
+        case "participants":
+          aValue = a.currentParticipants
+          bValue = b.currentParticipants
+          break
+        case "status":
+          aValue = a.status
+          bValue = b.status
+          break
+        case "priority":
+          aValue = a.priority
+          bValue = b.priority
+          break
         default:
-          aValue = a.startDate
-          bValue = b.startDate
+          aValue = a.title
+          bValue = b.title
+      }
+
+      if (typeof aValue === "string") {
+        aValue = aValue.toLowerCase()
+        bValue = bValue.toLowerCase()
       }
 
       if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : -1
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0
       } else {
-        return aValue < bValue ? 1 : -1
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0
       }
     })
 
-    console.log("Final filtered plans:", filtered.length, "plans")
     setFilteredPlans(filtered)
   }
 
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredPlans.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedPlans = filteredPlans.slice(startIndex, endIndex)
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-    setSelectedPlans([]) // Seçimleri temizle
+  // Event handlers
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    setCurrentPage(1)
   }
 
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage)
-    setCurrentPage(1) // İlk sayfaya dön
-    setSelectedPlans([]) // Seçimleri temizle
+  const handleStatusFilter = (status: string) => {
+    setSelectedStatus(status)
+    setCurrentPage(1)
   }
 
-  // Sayfa değiştiğinde seçimleri temizle
-  useEffect(() => {
-    setSelectedPlans([])
-  }, [currentPage, itemsPerPage])
-
-  // File Attachment Functions
-  const handleFileUpload = (planId: string, files: FileList | null) => {
-    if (!files) return
-    
-    const fileArray = Array.from(files)
-    setAttachments(prev => ({
-      ...prev,
-      [planId]: [...(prev[planId] || []), ...fileArray]
-    }))
-    toast.success(`${fileArray.length} dosya başarıyla yüklendi`)
+  const handleCategoryFilter = (category: string) => {
+    setSelectedCategory(category)
+    setCurrentPage(1)
   }
 
-  const handleFileRemove = (planId: string, fileIndex: number) => {
-    setAttachments(prev => ({
-      ...prev,
-      [planId]: prev[planId]?.filter((_, index) => index !== fileIndex) || []
-    }))
-    toast.success("Dosya başarıyla silindi")
-  }
-
-  const handleAttachmentDialog = (plan: TrainingPlan) => {
-    setSelectedPlanForAttachment(plan)
-    setIsAttachmentDialogOpen(true)
-  }
-
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase()
-    switch (extension) {
-      case 'pdf':
-        return <FileText className="h-4 w-4 text-red-500" />
-      case 'doc':
-      case 'docx':
-        return <FileText className="h-4 w-4 text-blue-500" />
-      case 'xls':
-      case 'xlsx':
-        return <FileText className="h-4 w-4 text-green-500" />
-      case 'ppt':
-      case 'pptx':
-        return <FileText className="h-4 w-4 text-orange-500" />
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-        return <FileText className="h-4 w-4 text-purple-500" />
-      default:
-        return <FileText className="h-4 w-4 text-gray-500" />
-    }
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
-  // Export/Import Functions
-  const handleExport = () => {
-    const dataToExport = exportRange === "all" ? filteredPlans : paginatedPlans
-    
-    if (exportFormat === "excel") {
-      exportToExcel(dataToExport)
-    } else if (exportFormat === "pdf") {
-      exportToPDF(dataToExport)
-    } else if (exportFormat === "csv") {
-      exportToCSV(dataToExport)
-    }
-    
-    setIsExportDialogOpen(false)
-  }
-
-  const exportToExcel = (data: TrainingPlan[]) => {
-    // Excel export simulation
-    const headers = [
-      "Başlık", "Açıklama", "Kategori", "Tür", "Seviye", "Durum",
-      "Başlangıç Tarihi", "Bitiş Tarihi", "Süre (Saat)", "Eğitmen",
-      "Konum", "Maksimum Katılımcı", "Mevcut Katılımcı", "Maliyet",
-      "Departman", "Öncelik", "Oluşturan", "Oluşturma Tarihi"
-    ]
-    
-    const csvContent = [
-      headers.join(","),
-      ...data.map(plan => [
-        `"${plan.title}"`,
-        `"${plan.description}"`,
-        `"${getCategoryText(plan.category)}"`,
-        `"${plan.type}"`,
-        `"${plan.level}"`,
-        `"${getStatusText(plan.status)}"`,
-        `"${plan.startDate}"`,
-        `"${plan.endDate}"`,
-        plan.duration,
-        `"${plan.instructor}"`,
-        `"${plan.location}"`,
-        plan.maxParticipants,
-        plan.currentParticipants,
-        plan.cost,
-        `"${plan.department}"`,
-        `"${plan.priority}"`,
-        `"${plan.createdBy}"`,
-        `"${plan.createdDate}"`
-      ].join(","))
-    ].join("\n")
-    
-    downloadFile(csvContent, "egitim-planlari.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    toast.success("Excel dosyası başarıyla indirildi")
-  }
-
-  const exportToPDF = (data: TrainingPlan[]) => {
-    // PDF export simulation
-    const content = `
-      EĞİTİM PLANLARI RAPORU
-      =====================
-      
-      Toplam Kayıt: ${data.length}
-      Oluşturma Tarihi: ${new Date().toLocaleDateString('tr-TR')}
-      
-      ${data.map((plan, index) => `
-      ${index + 1}. ${plan.title}
-         - Eğitmen: ${plan.instructor}
-         - Tarih: ${plan.startDate} - ${plan.endDate}
-         - Durum: ${getStatusText(plan.status)}
-         - Katılımcı: ${plan.currentParticipants}/${plan.maxParticipants}
-         - Maliyet: ${plan.cost}₺
-      `).join('\n')}
-    `
-    
-    downloadFile(content, "egitim-planlari.pdf", "application/pdf")
-    toast.success("PDF dosyası başarıyla indirildi")
-  }
-
-  const exportToCSV = (data: TrainingPlan[]) => {
-    const headers = [
-      "Başlık", "Açıklama", "Kategori", "Tür", "Seviye", "Durum",
-      "Başlangıç Tarihi", "Bitiş Tarihi", "Süre (Saat)", "Eğitmen",
-      "Konum", "Maksimum Katılımcı", "Mevcut Katılımcı", "Maliyet",
-      "Departman", "Öncelik", "Oluşturan", "Oluşturma Tarihi"
-    ]
-    
-    const csvContent = [
-      headers.join(","),
-      ...data.map(plan => [
-        `"${plan.title}"`,
-        `"${plan.description}"`,
-        `"${getCategoryText(plan.category)}"`,
-        `"${plan.type}"`,
-        `"${plan.level}"`,
-        `"${getStatusText(plan.status)}"`,
-        `"${plan.startDate}"`,
-        `"${plan.endDate}"`,
-        plan.duration,
-        `"${plan.instructor}"`,
-        `"${plan.location}"`,
-        plan.maxParticipants,
-        plan.currentParticipants,
-        plan.cost,
-        `"${plan.department}"`,
-        `"${plan.priority}"`,
-        `"${plan.createdBy}"`,
-        `"${plan.createdDate}"`
-      ].join(","))
-    ].join("\n")
-    
-    downloadFile(csvContent, "egitim-planlari.csv", "text/csv")
-    toast.success("CSV dosyası başarıyla indirildi")
-  }
-
-  const downloadFile = (content: string, filename: string, mimeType: string) => {
-    const blob = new Blob([content], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
-
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string
-        if (file.name.endsWith('.csv')) {
-          parseCSVImport(content)
-        } else {
-          toast.error("Sadece CSV dosyaları desteklenmektedir")
-        }
-      } catch (error) {
-        toast.error("Dosya okunurken hata oluştu")
-      }
-    }
-    reader.readAsText(file)
-  }
-
-  const parseCSVImport = (content: string) => {
-    const lines = content.split('\n')
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, ''))
-    
-    const importedPlans: TrainingPlan[] = []
-    
-    for (let i = 1; i < lines.length; i++) {
-      if (lines[i].trim()) {
-        const values = lines[i].split(',').map(v => v.replace(/"/g, ''))
-        if (values.length >= headers.length) {
-          const newPlan: TrainingPlan = {
-            id: `imported-${Date.now()}-${i}`,
-            title: values[0] || "",
-            description: values[1] || "",
-            category: values[2]?.toLowerCase() || "technical",
-            type: values[3] || "İç Eğitim",
-            level: values[4] || "Başlangıç",
-            duration: parseInt(values[8]) || 8,
-            startDate: values[6] || new Date().toISOString().split('T')[0],
-            endDate: values[7] || new Date().toISOString().split('T')[0],
-            status: values[5]?.toLowerCase() || "planned",
-            instructor: values[9] || "",
-            location: values[10] || "",
-            maxParticipants: parseInt(values[11]) || 20,
-            currentParticipants: parseInt(values[12]) || 0,
-            objectives: [],
-            prerequisites: "",
-            materials: [],
-            assessmentMethod: "Sınav",
-            passingScore: 70,
-            certificateIssued: true,
-            cost: parseFloat(values[13]) || 0,
-            budget: 0,
-            department: values[14] || "",
-            priority: values[15]?.toLowerCase() || "medium",
-            createdBy: values[16] || "İçe Aktarılan",
-            createdDate: values[17] || new Date().toISOString().split('T')[0],
-            lastModified: new Date().toISOString().split('T')[0],
-            completionRate: 0,
-            satisfactionScore: 0,
-            effectivenessScore: 0,
-            notes: "",
-          }
-          importedPlans.push(newPlan)
-        }
-      }
-    }
-    
-    if (importedPlans.length > 0) {
-      setPlans(prev => [...prev, ...importedPlans])
-      toast.success(`${importedPlans.length} eğitim planı başarıyla içe aktarıldı`)
+  const handleSort = (field: string) => {
+    if (field === sortBy) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
     } else {
-      toast.error("İçe aktarılacak geçerli veri bulunamadı")
+      setSortBy(field)
+      setSortOrder("asc")
     }
   }
 
-  // Calendar Functions
-  const getPlansForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]
-    return filteredPlans.filter(plan => 
-      plan.startDate === dateStr || 
-      (new Date(plan.startDate) <= date && new Date(plan.endDate) >= date)
-    )
+  const handleViewModeChange = (mode: "grid" | "list") => {
+    setViewMode(mode)
   }
 
-  const getPlansForMonth = (date: Date) => {
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    return filteredPlans.filter(plan => {
-      const planStart = new Date(plan.startDate)
-      const planEnd = new Date(plan.endDate)
-      return (
-        (planStart.getFullYear() === year && planStart.getMonth() === month) ||
-        (planEnd.getFullYear() === year && planEnd.getMonth() === month) ||
-        (planStart <= new Date(year, month, 1) && planEnd >= new Date(year, month + 1, 0))
-      )
-    })
-  }
-
-  const getPlansForWeek = (date: Date) => {
-    const startOfWeek = new Date(date)
-    startOfWeek.setDate(date.getDate() - date.getDay())
-    const endOfWeek = new Date(startOfWeek)
-    endOfWeek.setDate(startOfWeek.getDate() + 6)
-    
-    return filteredPlans.filter(plan => {
-      const planStart = new Date(plan.startDate)
-      const planEnd = new Date(plan.endDate)
-      return (
-        (planStart >= startOfWeek && planStart <= endOfWeek) ||
-        (planEnd >= startOfWeek && planEnd <= endOfWeek) ||
-        (planStart <= startOfWeek && planEnd >= endOfWeek)
-      )
-    })
-  }
-
-  const checkForConflicts = (plan: TrainingPlan) => {
-    const planStart = new Date(plan.startDate)
-    const planEnd = new Date(plan.endDate)
-    
-    return filteredPlans.filter(otherPlan => {
-      if (otherPlan.id === plan.id) return false
-      
-      const otherStart = new Date(otherPlan.startDate)
-      const otherEnd = new Date(otherPlan.endDate)
-      
-      return (
-        (planStart >= otherStart && planStart <= otherEnd) ||
-        (planEnd >= otherStart && planEnd <= otherEnd) ||
-        (planStart <= otherStart && planEnd >= otherEnd)
-      )
-    })
-  }
-
-  const getCalendarDays = (date: Date) => {
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const startDate = new Date(firstDay)
-    startDate.setDate(startDate.getDate() - firstDay.getDay())
-    
-    const days = []
-    for (let i = 0; i < 42; i++) {
-      const day = new Date(startDate)
-      day.setDate(startDate.getDate() + i)
-      days.push(day)
-    }
-    return days
-  }
-
-  const getWeekDays = (date: Date) => {
-    const startOfWeek = new Date(date)
-    startOfWeek.setDate(date.getDate() - date.getDay())
-    
-    const days = []
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(startOfWeek)
-      day.setDate(startOfWeek.getDate() + i)
-      days.push(day)
-    }
-    return days
-  }
-
-  const formatCalendarDate = (date: Date) => {
-    return date.toLocaleDateString('tr-TR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
-
-  // Email Notifications Functions
-  const handleEmailNotification = (plan: TrainingPlan, type: string) => {
-    setSelectedPlan(plan)
-    setEmailTemplate(type)
-    setEmailRecipients([])
-    setEmailSubject(getEmailSubject(plan, type))
-    setEmailMessage(getEmailMessage(plan, type))
-    setIsEmailDialogOpen(true)
-  }
-
-  const getEmailSubject = (plan: TrainingPlan, type: string) => {
-    switch (type) {
-      case "reminder":
-        return `Eğitim Hatırlatması: ${plan.title}`
-      case "cancellation":
-        return `Eğitim İptal Edildi: ${plan.title}`
-      case "update":
-        return `Eğitim Güncellendi: ${plan.title}`
-      case "completion":
-        return `Eğitim Tamamlandı: ${plan.title}`
-      default:
-        return `Eğitim Bildirimi: ${plan.title}`
-    }
-  }
-
-  const getEmailMessage = (plan: TrainingPlan, type: string) => {
-    const baseMessage = `
-Merhaba,
-
-${plan.title} eğitimi hakkında bilgilendirme:
-
-📅 Tarih: ${plan.startDate} - ${plan.endDate}
-⏰ Süre: ${plan.duration} saat
-👨‍🏫 Eğitmen: ${plan.instructor}
-📍 Konum: ${plan.location}
-👥 Katılımcı Sayısı: ${plan.currentParticipants}/${plan.maxParticipants}
-💰 Maliyet: ${plan.cost}₺
-
-Detaylar:
-${plan.description}
-
-Önkoşullar: ${plan.prerequisites}
-
-Saygılarımızla,
-Kalite Yönetim Sistemi
-    `.trim()
-
-    switch (type) {
-      case "reminder":
-        return `Eğitim hatırlatması:\n\n${baseMessage}\n\nLütfen eğitim tarihini not alınız.`
-      case "cancellation":
-        return `Eğitim iptal edildi:\n\n${baseMessage}\n\nYeni tarih belirlendiğinde bilgilendirileceksiniz.`
-      case "update":
-        return `Eğitim güncellendi:\n\n${baseMessage}\n\nDeğişiklikleri kontrol ediniz.`
-      case "completion":
-        return `Eğitim tamamlandı:\n\n${baseMessage}\n\nKatılımınız için teşekkür ederiz.`
-      default:
-        return baseMessage
-    }
-  }
-
-  const sendEmail = () => {
-    if (emailRecipients.length === 0) {
-      toast.error("Lütfen en az bir alıcı seçin")
-      return
-    }
-
-    // Email gönderme simülasyonu
-    const emailData = {
-      recipients: emailRecipients,
-      subject: emailSubject,
-      message: emailMessage,
-      plan: selectedPlan,
-      template: emailTemplate,
-      sentAt: new Date().toISOString()
-    }
-
-    console.log("Email gönderildi:", emailData)
-    
-    toast.success(`${emailRecipients.length} kişiye e-posta gönderildi`)
-    setIsEmailDialogOpen(false)
-    setEmailRecipients([])
-    setEmailSubject("")
-    setEmailMessage("")
-  }
-
-  const addEmailRecipient = (email: string) => {
-    if (email && !emailRecipients.includes(email)) {
-      setEmailRecipients(prev => [...prev, email])
-    }
-  }
-
-  const removeEmailRecipient = (email: string) => {
-    setEmailRecipients(prev => prev.filter(e => e !== email))
-  }
-
-  const getUpcomingPlans = () => {
-    const today = new Date()
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-    
-    return filteredPlans.filter(plan => {
-      const planDate = new Date(plan.startDate)
-      return planDate >= today && planDate <= nextWeek && plan.status === "planned"
-    })
-  }
-
-  const getOverduePlans = () => {
-    const today = new Date()
-    
-    return filteredPlans.filter(plan => {
-      const planDate = new Date(plan.startDate)
-      return planDate < today && plan.status === "planned"
-    })
-  }
-
-  // Role-based Access Functions
-  const hasPermission = (permission: string) => {
-    return currentUser.permissions.includes(permission)
-  }
-
-  const canEdit = (plan: TrainingPlan) => {
-    if (hasPermission("write")) return true
-    if (currentUser.role === "instructor" && plan.instructor === currentUser.name) return true
-    return false
-  }
-
-  const canDelete = (plan: TrainingPlan) => {
-    if (hasPermission("delete")) return true
-    if (currentUser.role === "instructor" && plan.instructor === currentUser.name) return true
-    return false
-  }
-
-  const canExport = () => {
-    return hasPermission("export")
-  }
-
-  const canSendEmail = () => {
-    return hasPermission("email")
-  }
-
-  const getRoleBasedPlans = () => {
-    console.log("Current User Role:", currentUser.role)
-    console.log("Total Plans:", plans.length)
-    
-    if (currentUser.role === "admin") {
-      console.log("Admin: Returning all plans")
-      return plans // Admin tüm planları görebilir
-    } else if (currentUser.role === "instructor") {
-      const instructorPlans = plans.filter(plan => plan.instructor === currentUser.name)
-      console.log("Instructor: Returning", instructorPlans.length, "plans")
-      return instructorPlans
-    } else if (currentUser.role === "participant") {
-      const participantPlans = plans.filter(plan => 
-        plan.participants?.includes(currentUser.name) || 
-        plan.currentParticipants > 0
-      )
-      console.log("Participant: Returning", participantPlans.length, "plans")
-      return participantPlans
-    }
-    console.log("Default: Returning all plans")
-    return plans // Varsayılan olarak tüm planları göster
-  }
-
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case "admin": return "Yönetici"
-      case "instructor": return "Eğitmen"
-      case "participant": return "Katılımcı"
-      case "viewer": return "Görüntüleyici"
-      default: return "Kullanıcı"
-    }
-  }
-
-  // Search Suggestions Functions
-  const generateSearchSuggestions = (query: string) => {
-    if (!query || query.length < 2) {
-      setSearchSuggestions([])
-      return
-    }
-
-    const suggestions: string[] = []
-    const lowerQuery = query.toLowerCase()
-
-    // Eğitim başlıklarından öneriler
-    plans.forEach(plan => {
-      if (plan.title?.toLowerCase().includes(lowerQuery)) {
-        suggestions.push(plan.title)
-      }
-      if (plan.instructor?.toLowerCase().includes(lowerQuery)) {
-        suggestions.push(plan.instructor)
-      }
-      if (plan.department?.toLowerCase().includes(lowerQuery)) {
-        suggestions.push(plan.department)
-      }
-      if (plan.category?.toLowerCase().includes(lowerQuery)) {
-        suggestions.push(plan.category)
-      }
-    })
-
-    // Popüler aramalar
-    const popularMatches = popularSearches.filter(search => 
-      search.toLowerCase().includes(lowerQuery)
-    )
-
-    // Arama geçmişi
-    const historyMatches = searchHistory.filter(search => 
-      search.toLowerCase().includes(lowerQuery)
-    )
-
-    // Önerileri birleştir ve tekrarları kaldır
-    const allSuggestions = [
-      ...suggestions,
-      ...popularMatches,
-      ...historyMatches
-    ].filter((value, index, self) => self.indexOf(value) === index)
-
-    setSearchSuggestions(allSuggestions.slice(0, 8)) // En fazla 8 öneri
-  }
-
-  const handleSearchInputChange = (value: string) => {
-    setSearchTerm(value)
-    generateSearchSuggestions(value)
-    setShowSuggestions(value.length > 0)
-  }
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchTerm(suggestion)
-    setShowSuggestions(false)
-    addToSearchHistory(suggestion)
-  }
-
-  const addToSearchHistory = (searchTerm: string) => {
-    if (searchTerm.trim() && !searchHistory.includes(searchTerm)) {
-      const newHistory = [searchTerm, ...searchHistory].slice(0, 10) // Son 10 arama
-      setSearchHistory(newHistory)
-      localStorage.setItem('training-search-history', JSON.stringify(newHistory))
-    }
-  }
-
-  const clearSearchHistory = () => {
-    setSearchHistory([])
-    localStorage.removeItem('training-search-history')
-  }
-
-  const getPopularSearches = () => {
-    // Popüler aramaları hesapla
-    const searchCounts: Record<string, number> = {}
-    
-    // Mock data'dan popüler terimler
-    const popularTerms = [
-      "kalite", "güvenlik", "teknik", "yönetim", "eğitim",
-      "kalibrasyon", "test", "analiz", "rapor", "sertifika"
-    ]
-
-    popularTerms.forEach(term => {
-      const count = plans.filter(plan => 
-        plan.title.toLowerCase().includes(term) ||
-        plan.description.toLowerCase().includes(term) ||
-        plan.category.toLowerCase().includes(term)
-      ).length
-      searchCounts[term] = count
-    })
-
-    return Object.entries(searchCounts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 5)
-      .map(([term]) => term)
-  }
-
-  const getQuickFilters = () => {
-    return [
-      { label: "Bu Hafta", filter: () => {
-        const today = new Date()
-        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-        setDateRange({
-          start: today.toISOString().split('T')[0],
-          end: nextWeek.toISOString().split('T')[0]
-        })
-        setShowSuggestions(false)
-      }},
-      { label: "Bu Ay", filter: () => {
-        const today = new Date()
-        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate())
-        setDateRange({
-          start: today.toISOString().split('T')[0],
-          end: nextMonth.toISOString().split('T')[0]
-        })
-        setShowSuggestions(false)
-      }},
-      { label: "Yüksek Öncelik", filter: () => {
-        setPriorityFilter("high")
-        setShowSuggestions(false)
-      }},
-      { label: "Tamamlanan", filter: () => {
-        setSelectedStatus("completed")
-        setShowSuggestions(false)
-      }}
-    ]
-  }
-
-  // Real-time Updates Functions
-  const addUpdateNotification = (type: 'created' | 'updated' | 'deleted' | 'status_changed', plan: TrainingPlan, message?: string) => {
-    if (!isRealTimeEnabled || !plan) return
-
-    const notification = {
-      id: `update-${Date.now()}-${Math.random()}`,
-      type,
-      message: message || getUpdateMessage(type, plan),
-      timestamp: new Date(),
-      planId: plan.id || 'unknown'
-    }
-
-    setUpdateNotifications(prev => [notification, ...prev].slice(0, 10)) // Son 10 bildirim
-    setShowUpdateNotification(true)
-    setLastUpdateTime(new Date())
-
-    // 5 saniye sonra bildirimi gizle
-    setTimeout(() => {
-      setShowUpdateNotification(false)
-    }, 5000)
-  }
-
-  const getUpdateMessage = (type: string, plan: TrainingPlan) => {
-    const planTitle = plan?.title || 'Bilinmeyen Plan'
-    
-    switch (type) {
-      case 'created':
-        return `Yeni eğitim planı oluşturuldu: ${planTitle}`
-      case 'updated':
-        return `Eğitim planı güncellendi: ${planTitle}`
-      case 'deleted':
-        return `Eğitim planı silindi: ${planTitle}`
-      case 'status_changed':
-        return `Eğitim planı durumu değişti: ${planTitle}`
-      default:
-        return `Eğitim planı güncellendi: ${planTitle}`
-    }
-  }
-
-  const simulateRealTimeUpdate = () => {
-    if (!isRealTimeEnabled || !plans || plans.length === 0) return
-
-    // Rastgele bir güncelleme simüle et
-    const updateTypes = ['created', 'updated', 'status_changed'] as const
-    const randomType = updateTypes[Math.floor(Math.random() * updateTypes.length)]
-    const randomPlan = plans[Math.floor(Math.random() * plans.length)]
-
-    // Plan'ın geçerli olduğundan emin ol
-    if (randomPlan && randomPlan.title) {
-      addUpdateNotification(randomType, randomPlan)
-    }
-  }
-
-  const checkForUpdates = async () => {
-    if (!isRealTimeEnabled || !plans || plans.length === 0) return
-
-    try {
-      // Gerçek uygulamada burada API'den güncellemeleri kontrol edersiniz
-      // Şimdilik mock data'dan rastgele güncelleme simüle ediyoruz
-      const shouldUpdate = Math.random() > 0.7 // %30 ihtimalle güncelleme
-      
-      if (shouldUpdate) {
-        simulateRealTimeUpdate()
-      }
-    } catch (error) {
-      console.error('Real-time update check failed:', error)
-    }
-  }
-
-  const clearUpdateNotifications = () => {
-    setUpdateNotifications([])
-    setShowUpdateNotification(false)
-  }
-
-  const getUpdateIcon = (type: string) => {
-    switch (type) {
-      case 'created':
-        return <Plus className="h-4 w-4 text-green-500" />
-      case 'updated':
-        return <Edit className="h-4 w-4 text-blue-500" />
-      case 'deleted':
-        return <X className="h-4 w-4 text-red-500" />
-      case 'status_changed':
-        return <CheckCircle className="h-4 w-4 text-yellow-500" />
-      default:
-        return <Activity className="h-4 w-4 text-gray-500" />
-    }
-  }
-
-  const formatUpdateTime = (timestamp: Date) => {
-    const now = new Date()
-    const diff = now.getTime() - timestamp.getTime()
-    const seconds = Math.floor(diff / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-
-    if (seconds < 60) return 'Az önce'
-    if (minutes < 60) return `${minutes} dakika önce`
-    if (hours < 24) return `${hours} saat önce`
-    return timestamp.toLocaleDateString('tr-TR')
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "ongoing":
-        return <Play className="h-4 w-4 text-blue-500" />
-      case "planned":
-        return <Calendar className="h-4 w-4 text-gray-500" />
-      case "cancelled":
-        return <UserX className="h-4 w-4 text-red-500" />
-      case "postponed":
-        return <Pause className="h-4 w-4 text-yellow-500" />
-      default:
-        return <Settings className="h-4 w-4 text-gray-500" />
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800"
-      case "ongoing":
-        return "bg-blue-100 text-blue-800"
-      case "planned":
-        return "bg-gray-100 text-gray-800"
-      case "cancelled":
-        return "bg-red-100 text-red-800"
-      case "postponed":
-        return "bg-yellow-100 text-yellow-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "Tamamlandı"
-      case "ongoing":
-        return "Devam Ediyor"
-      case "planned":
-        return "Planlandı"
-      case "cancelled":
-        return "İptal Edildi"
-      case "postponed":
-        return "Ertelendi"
-      default:
-        return status
-    }
-  }
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "technical":
-        return "bg-blue-100 text-blue-800"
-      case "safety":
-        return "bg-red-100 text-red-800"
-      case "compliance":
-        return "bg-green-100 text-green-800"
-      case "soft_skills":
-        return "bg-purple-100 text-purple-800"
-      case "leadership":
-        return "bg-yellow-100 text-yellow-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getCategoryText = (category: string) => {
-    switch (category) {
-      case "technical":
-        return "Teknik"
-      case "safety":
-        return "Güvenlik"
-      case "compliance":
-        return "Uyumluluk"
-      case "soft_skills":
-        return "Yumuşak Beceriler"
-      case "leadership":
-        return "Liderlik"
-      default:
-        return category
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-800"
-      case "medium":
-        return "bg-yellow-100 text-yellow-800"
-      case "low":
-        return "bg-green-100 text-green-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "Yüksek"
-      case "medium":
-        return "Orta"
-      case "low":
-        return "Düşük"
-      default:
-        return priority
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("tr-TR")
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("tr-TR", {
-      style: "currency",
-      currency: "TRY"
-    }).format(amount)
-  }
-
-  const getDaysUntilStart = (dateString: string) => {
-    const today = new Date()
-    const startDate = new Date(dateString)
-    const diffTime = startDate.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
-
-  const getDaysUntilEnd = (dateString: string) => {
-    const today = new Date()
-    const endDate = new Date(dateString)
-    const diffTime = endDate.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
-
-  // CRUD Fonksiyonları
-  const handleNewPlan = () => {
-    setEditingPlan(null)
-    setFormData({})
-    setFormErrors({})
-    setIsEditDialogOpen(true)
-  }
-
-  const handleEditPlan = (plan: TrainingPlan) => {
-    setEditingPlan(plan)
-    setFormData(plan)
-    setFormErrors({})
-    setIsEditDialogOpen(true)
-  }
-
-  const handleDeletePlan = (plan: TrainingPlan) => {
-    setDeletingPlan(plan)
-    setIsDeleteDialogOpen(true)
-  }
-
-  const confirmDelete = () => {
-    if (deletingPlan) {
-      addUpdateNotification('deleted', deletingPlan)
-      setPlans(prev => prev.filter(p => p.id !== deletingPlan.id))
-      toast.success("Eğitim planı başarıyla silindi")
-      setDeletingPlan(null)
-      setIsDeleteDialogOpen(false)
-    }
-  }
-
-  // Form Validation
-  const validateForm = (data: Partial<TrainingPlan>) => {
-    const errors: Record<string, string> = {}
-    
-    if (!data.title?.trim()) errors.title = "Başlık zorunludur"
-    if (!data.description?.trim()) errors.description = "Açıklama zorunludur"
-    if (!data.instructor?.trim()) errors.instructor = "Eğitmen zorunludur"
-    if (!data.location?.trim()) errors.location = "Konum zorunludur"
-    if (!data.startDate) errors.startDate = "Başlangıç tarihi zorunludur"
-    if (!data.endDate) errors.endDate = "Bitiş tarihi zorunludur"
-    if (data.startDate && data.endDate && new Date(data.startDate) >= new Date(data.endDate)) {
-      errors.endDate = "Bitiş tarihi başlangıç tarihinden sonra olmalıdır"
-    }
-    if (!data.maxParticipants || data.maxParticipants < 1) errors.maxParticipants = "Maksimum katılımcı sayısı 1'den büyük olmalıdır"
-    if (!data.duration || data.duration < 1) errors.duration = "Süre 1 saatten fazla olmalıdır"
-    if (!data.cost || data.cost < 0) errors.cost = "Maliyet 0'dan küçük olamaz"
-    
-    return errors
-  }
-
-  const handleSavePlan = (planData: Partial<TrainingPlan>) => {
-    const errors = validateForm(planData)
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors)
-      toast.error("Lütfen tüm zorunlu alanları doldurun")
-      return
-    }
-
-    setFormErrors({})
-    
-    if (editingPlan) {
-      // Güncelleme
-      const updatedPlan = { ...editingPlan, ...planData, lastModified: new Date().toISOString() }
-      setPlans(prev => prev.map(p => p.id === editingPlan.id ? updatedPlan : p))
-      addUpdateNotification('updated', updatedPlan)
-      toast.success("Eğitim planı başarıyla güncellendi")
+  const handlePlanSelection = (planId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedPlans([...selectedPlans, planId])
     } else {
-      // Yeni ekleme
-      const newPlan: TrainingPlan = {
-        id: `plan-${Date.now()}`,
-        title: planData.title || "",
-        description: planData.description || "",
-        category: planData.category || "technical",
-        type: planData.type || "İç Eğitim",
-        level: planData.level || "Başlangıç",
-        duration: planData.duration || 8,
-        startDate: planData.startDate || new Date().toISOString().split('T')[0],
-        endDate: planData.endDate || new Date().toISOString().split('T')[0],
-        status: planData.status || "planned",
-        instructor: planData.instructor || "",
-        location: planData.location || "",
-        maxParticipants: planData.maxParticipants || 20,
-        currentParticipants: 0,
-        objectives: planData.objectives || [],
-        prerequisites: planData.prerequisites || "",
-        materials: planData.materials || [],
-        assessmentMethod: planData.assessmentMethod || "Sınav",
-        passingScore: planData.passingScore || 70,
-        certificateIssued: planData.certificateIssued || true,
-        cost: planData.cost || 0,
-        budget: planData.budget || 0,
-        department: planData.department || "",
-        priority: planData.priority || "medium",
-        createdBy: "Mevcut Kullanıcı",
-        createdDate: new Date().toISOString().split('T')[0],
-        lastModified: new Date().toISOString().split('T')[0],
-        completionRate: 0,
-        satisfactionScore: 0,
-        effectivenessScore: 0,
-        notes: planData.notes || "",
-      }
-      setPlans(prev => [...prev, newPlan])
-      addUpdateNotification('created', newPlan)
-      toast.success("Yeni eğitim planı başarıyla oluşturuldu")
-    }
-    setEditingPlan(null)
-    setFormData({})
-    setIsEditDialogOpen(false)
-    setIsNewPlanDialogOpen(false)
-  }
-
-  // Bulk Operations
-  const handleSelectPlan = (planId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedPlans(prev => [...prev, planId])
-    } else {
-      setSelectedPlans(prev => prev.filter(id => id !== planId))
+      setSelectedPlans(selectedPlans.filter(id => id !== planId))
     }
   }
 
-  const handleSelectAllPlans = (checked: boolean) => {
-    if (checked) {
-      setSelectedPlans(filteredPlans.map(plan => plan.id))
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      const currentPagePlans = filteredPlans.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+      )
+      setSelectedPlans(currentPagePlans.map(plan => plan.id))
     } else {
       setSelectedPlans([])
     }
   }
 
-  const handleBulkDelete = () => {
-    if (selectedPlans.length === 0) {
-      toast.error("Lütfen silinecek eğitim planlarını seçin")
-      return
-    }
-    setIsBulkDeleteDialogOpen(true)
-  }
-
-  const confirmBulkDelete = () => {
-    setPlans(prev => prev.filter(plan => !selectedPlans.includes(plan.id)))
-    toast.success(`${selectedPlans.length} eğitim planı başarıyla silindi`)
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
     setSelectedPlans([])
-    setIsBulkDeleteDialogOpen(false)
   }
 
-  const handleBulkStatusChange = () => {
-    if (selectedPlans.length === 0) {
-      toast.error("Lütfen durumu değiştirilecek eğitim planlarını seçin")
-      return
-    }
-    if (!bulkStatus) {
-      toast.error("Lütfen yeni durumu seçin")
-      return
-    }
-    setIsBulkStatusDialogOpen(true)
-  }
-
-  const confirmBulkStatusChange = () => {
-    setPlans(prev => prev.map(plan => 
-      selectedPlans.includes(plan.id) 
-        ? { ...plan, status: bulkStatus }
-        : plan
-    ))
-    toast.success(`${selectedPlans.length} eğitim planının durumu "${getStatusText(bulkStatus)}" olarak güncellendi`)
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items)
+    setCurrentPage(1)
     setSelectedPlans([])
-    setBulkStatus("")
-    setIsBulkStatusDialogOpen(false)
   }
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Eğitim Planları</h1>
-            <p className="text-muted-foreground">Personel eğitim planlaması ve takibi</p>
-          </div>
-        </div>
-        <div className="grid gap-6 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="space-y-0 pb-2">
-                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
+  const handleDateRangeChange = (range: { start: string; end: string }) => {
+    setDateRange(range)
+    setCurrentPage(1)
+  }
+
+  const handleCostRangeChange = (range: { min: string; max: string }) => {
+    setCostRange(range)
+    setCurrentPage(1)
+  }
+
+  const handleParticipantRangeChange = (range: { min: string; max: string }) => {
+    setParticipantRange(range)
+    setCurrentPage(1)
+  }
+
+  const handlePriorityFilter = (priority: string) => {
+    setPriorityFilter(priority)
+    setCurrentPage(1)
+  }
+
+  const handleInstructorFilter = (instructor: string) => {
+    setInstructorFilter(instructor)
+    setCurrentPage(1)
+  }
+
+  const handleClearFilters = () => {
+    setSearchTerm("")
+    setSelectedStatus("all")
+    setSelectedCategory("all")
+    setDateRange({ start: "", end: "" })
+    setCostRange({ min: "", max: "" })
+    setParticipantRange({ min: "", max: "" })
+    setPriorityFilter("all")
+    setInstructorFilter("")
+    setCurrentPage(1)
+  }
+
+  const handleToggleFilters = () => {
+    setShowFilters(!showFilters)
+  }
+
+  const handleRealTimeToggle = (enabled: boolean) => {
+    setIsRealTimeEnabled(enabled)
+  }
+
+  const handleRoleChange = (role: string) => {
+    setCurrentUser(prev => ({
+      ...prev,
+      role
+    }))
+  }
+
+  const addUpdateNotification = (notification: {
+    type: 'created' | 'updated' | 'deleted' | 'status_changed'
+    message: string
+    planId: string
+  }) => {
+    const newNotification = {
+      id: `notif-${Date.now()}`,
+      ...notification,
+      timestamp: new Date()
+    }
+    setUpdateNotifications(prev => [newNotification, ...prev.slice(0, 9)])
+    setShowUpdateNotification(true)
+    setTimeout(() => setShowUpdateNotification(false), 3000)
+  }
+
+  const clearUpdateNotifications = () => {
+    setUpdateNotifications([])
+  }
+
+  // Permission check helper
+  const hasPermission = (permission: string): boolean => {
+    return currentUser.permissions.includes(permission)
+  }
+
+  // Calculate statistics
+  const stats = {
+    total: plans.length,
+    completed: plans.filter(p => p.status === "completed").length,
+    inProgress: plans.filter(p => p.status === "in-progress").length,
+    planned: plans.filter(p => p.status === "planned").length,
+    cancelled: plans.filter(p => p.status === "cancelled").length,
+    averageCost: plans.length > 0 ? plans.reduce((sum, p) => sum + p.cost, 0) / plans.length : 0,
+    totalBudget: plans.reduce((sum, p) => sum + p.budget, 0),
+    totalParticipants: plans.reduce((sum, p) => sum + p.currentParticipants, 0),
+    averageSatisfaction: plans.length > 0 ? plans.reduce((sum, p) => sum + p.satisfactionScore, 0) / plans.length : 0,
+    completionRate: plans.length > 0 ? plans.reduce((sum, p) => sum + p.completionRate, 0) / plans.length : 0
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Eğitim Planları</h1>
-          <p className="text-muted-foreground">Personel eğitim planlaması ve takibi</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="userRole">Kullanıcı Rolü:</Label>
-            <Select 
-              value={currentUser.role} 
-              onValueChange={(role) => {
-                const rolePermissions = {
-                  admin: ["read", "write", "delete", "export", "email"],
-                  instructor: ["read", "write", "email"],
-                  participant: ["read"],
-                  viewer: ["read"]
-                }
-                setCurrentUser(prev => ({
-                  ...prev,
-                  role,
-                  permissions: rolePermissions[role as keyof typeof rolePermissions] || []
-                }))
-              }}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Yönetici</SelectItem>
-                <SelectItem value="instructor">Eğitmen</SelectItem>
-                <SelectItem value="participant">Katılımcı</SelectItem>
-                <SelectItem value="viewer">Görüntüleyici</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {getRoleDisplayName(currentUser.role)}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsRealTimeEnabled(!isRealTimeEnabled)}
-              className={isRealTimeEnabled ? "bg-green-100 text-green-800" : ""}
-            >
-              <Activity className="h-4 w-4 mr-2" />
-              {isRealTimeEnabled ? "Gerçek Zamanlı Açık" : "Gerçek Zamanlı Kapalı"}
-            </Button>
-            {updateNotifications.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowUpdateNotification(!showUpdateNotification)}
-                className="relative"
-              >
-                <Bell className="h-4 w-4 mr-2" />
-                Güncellemeler ({updateNotifications.length})
-                {updateNotifications.length > 0 && (
-                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-xs text-white">{updateNotifications.length}</span>
-                  </div>
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {selectedPlans.length > 0 && hasPermission("delete") && (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleBulkStatusChange}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Durum Değiştir ({selectedPlans.length})
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={handleBulkDelete}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Seçilenleri Sil ({selectedPlans.length})
-              </Button>
-            </>
-          )}
-          {canExport() && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsExportDialogOpen(true)}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Dışa Aktar
-            </Button>
-          )}
-          {hasPermission("write") && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsImportDialogOpen(true)}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              İçe Aktar
-            </Button>
-          )}
-          {hasPermission("write") && (
-            <Button size="sm" onClick={handleNewPlan}>
-              <Plus className="h-4 w-4 mr-2" />
-              Yeni Plan
-            </Button>
-          )}
-        </div>
-      </div>
+    <div className="flex-1 space-y-6 p-6">
+      <TrainingPlansHeader
+        currentUser={currentUser}
+        setCurrentUser={setCurrentUser}
+        selectedPlans={selectedPlans}
+        updateNotifications={updateNotifications}
+        isRealTimeEnabled={isRealTimeEnabled}
+        setIsRealTimeEnabled={setIsRealTimeEnabled}
+        showUpdateNotification={showUpdateNotification}
+        setShowUpdateNotification={setShowUpdateNotification}
+        onNewPlan={() => {}}
+        onBulkStatusChange={() => {}}
+        onBulkDelete={() => {}}
+        onExport={() => {}}
+        onImport={() => {}}
+      />
 
-      {/* İstatistik Kartları */}
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Plan</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{plans.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {plans.filter(p => p.status === "ongoing").length} devam ediyor
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tamamlanan</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {plans.filter(p => p.status === "completed").length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Bu ay tamamlanan
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ortalama Memnuniyet</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(plans.reduce((sum, p) => sum + p.satisfactionScore, 0) / plans.length).toFixed(1)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              /5.0 puan
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Maliyet</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(plans.reduce((sum, p) => sum + p.cost, 0))}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Yıllık eğitim bütçesi
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <TrainingPlansStats
+        plans={plans}
+      />
 
-      {/* Arama ve Filtreleme */}
-      <Card>
-        <CardContent className="pt-6">
-          {/* Arama ve Kontroller */}
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-            {/* Sol: Arama + Filter Toggle */}
-            <div className="flex flex-col sm:flex-row gap-3 flex-1">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Eğitim, eğitmen ara..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearchInputChange(e.target.value)}
-                  onFocus={() => setShowSuggestions(searchTerm.length > 0)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  className="pl-10"
-                />
-                
-                {/* Search Suggestions Dropdown */}
-                {showSuggestions && (searchSuggestions.length > 0 || searchHistory.length > 0 || popularSearches.length > 0) && (
-                  <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-80 overflow-y-auto">
-                    {/* Arama Önerileri */}
-                    {searchSuggestions.length > 0 && (
-                      <div className="p-2">
-                        <div className="text-xs font-medium text-gray-500 mb-2 px-2">Öneriler</div>
-                        {searchSuggestions.map((suggestion, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleSuggestionClick(suggestion)}
-                            className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
-                          >
-                            <Search className="h-3 w-3 text-gray-400" />
-                            {suggestion}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Arama Geçmişi */}
-                    {searchHistory.length > 0 && searchSuggestions.length === 0 && (
-                      <div className="p-2 border-t">
-                        <div className="flex items-center justify-between mb-2 px-2">
-                          <div className="text-xs font-medium text-gray-500">Son Aramalar</div>
-                          <button
-                            onClick={clearSearchHistory}
-                            className="text-xs text-red-500 hover:text-red-700"
-                          >
-                            Temizle
-                          </button>
-                        </div>
-                        {searchHistory.slice(0, 5).map((history, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleSuggestionClick(history)}
-                            className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
-                          >
-                            <Clock className="h-3 w-3 text-gray-400" />
-                            {history}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Popüler Aramalar */}
-                    {popularSearches.length > 0 && searchSuggestions.length === 0 && searchHistory.length === 0 && (
-                      <div className="p-2 border-t">
-                        <div className="text-xs font-medium text-gray-500 mb-2 px-2">Popüler Aramalar</div>
-                        {popularSearches.map((popular, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleSuggestionClick(popular)}
-                            className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
-                          >
-                            <TrendingUp className="h-3 w-3 text-gray-400" />
-                            {popular}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Hızlı Filtreler */}
-                    <div className="p-2 border-t">
-                      <div className="text-xs font-medium text-gray-500 mb-2 px-2">Hızlı Filtreler</div>
-                      <div className="grid grid-cols-2 gap-1">
-                        {getQuickFilters().map((filter, index) => (
-                          <button
-                            key={index}
-                            onClick={filter.filter}
-                            className="text-left px-2 py-1 text-xs hover:bg-gray-100 rounded flex items-center gap-1"
-                          >
-                            <Filter className="h-3 w-3 text-gray-400" />
-                            {filter.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Filter Toggle Button */}
-              <Button
-                variant={showFilters ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="shrink-0"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtreler
-              </Button>
-            </div>
-            
-            {/* Sağ: Görünüm Butonları */}
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "grid" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={calendarView ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCalendarView(!calendarView)}
-              >
-                <Calendar className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+      <TrainingPlansFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedStatus={selectedStatus}
+        setSelectedStatus={setSelectedStatus}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        costRange={costRange}
+        setCostRange={setCostRange}
+        participantRange={participantRange}
+        setParticipantRange={setParticipantRange}
+        priorityFilter={priorityFilter}
+        setPriorityFilter={setPriorityFilter}
+        instructorFilter={instructorFilter}
+        setInstructorFilter={setInstructorFilter}
+        showFilters={showFilters}
+        setShowFilters={setShowFilters}
+        filteredCount={filteredPlans.length}
+        totalCount={plans.length}
+        onClearFilters={handleClearFilters}
+      />
 
-          {/* Filtreleme Alanı - Toggle ile Açılıp Kapanır */}
-          <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
-            showFilters ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
-          }`}>
-            <div className="space-y-6 border-t pt-6">
-              {/* Temel Filtreler */}
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Durum</label>
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Durum seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusFilters.map((status) => (
-                        <SelectItem key={status.id} value={status.id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: status.color }}
-                            />
-                            {status.name} ({status.count})
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Kategori</label>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Kategori seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryFilters.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: category.color }}
-                            />
-                            {category.name} ({category.count})
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Filtreleri Temizle</label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setDateRange({ start: "", end: "" })
-                      setCostRange({ min: "", max: "" })
-                      setParticipantRange({ min: "", max: "" })
-                      setPriorityFilter("all")
-                      setInstructorFilter("")
-                      setSearchTerm("")
-                      setSelectedStatus("all")
-                      setSelectedCategory("all")
-                    }}
-                    className="w-full"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Temizle
-                  </Button>
-                </div>
-              </div>
-
-              {/* Gelişmiş Filtreler */}
-              <div className="border-t pt-4">
-                <h4 className="text-sm font-medium mb-4">Gelişmiş Filtreler</h4>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Tarih Aralığı</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="date"
-                        placeholder="Başlangıç"
-                        value={dateRange.start}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                      />
-                      <Input
-                        type="date"
-                        placeholder="Bitiş"
-                        value={dateRange.end}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Maliyet Aralığı (₺)</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="number"
-                        placeholder="Min"
-                        value={costRange.min}
-                        onChange={(e) => setCostRange(prev => ({ ...prev, min: e.target.value }))}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Max"
-                        value={costRange.max}
-                        onChange={(e) => setCostRange(prev => ({ ...prev, max: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Katılımcı Sayısı</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="number"
-                        placeholder="Min"
-                        value={participantRange.min}
-                        onChange={(e) => setParticipantRange(prev => ({ ...prev, min: e.target.value }))}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Max"
-                        value={participantRange.max}
-                        onChange={(e) => setParticipantRange(prev => ({ ...prev, max: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Öncelik</label>
-                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Öncelik seçin" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tümü</SelectItem>
-                        <SelectItem value="high">Yüksek</SelectItem>
-                        <SelectItem value="medium">Orta</SelectItem>
-                        <SelectItem value="low">Düşük</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Eğitmen</label>
-                    <Input
-                      placeholder="Eğitmen ara..."
-                      value={instructorFilter}
-                      onChange={(e) => setInstructorFilter(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Calendar View */}
-      {calendarView ? (
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Takvim Görünümü</CardTitle>
-                <CardDescription>
-                  Eğitim planlarını takvim formatında görüntüleyin
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Select value={calendarMode} onValueChange={(value: "month" | "week" | "day") => setCalendarMode(value)}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="month">Ay</SelectItem>
-                    <SelectItem value="week">Hafta</SelectItem>
-                    <SelectItem value="day">Gün</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedDate(new Date())}
-                >
-                  Bugün
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {calendarMode === "month" && (
-              <div className="space-y-4">
-                {/* Month Header */}
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">
-                    {selectedDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' })}
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Month Calendar */}
-                <div className="grid grid-cols-7 gap-1">
-                  {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(day => (
-                    <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
-                      {day}
-                    </div>
-                  ))}
-                  {getCalendarDays(selectedDate).map((day, index) => {
-                    const dayPlans = getPlansForDate(day)
-                    const isCurrentMonth = day.getMonth() === selectedDate.getMonth()
-                    const isToday = day.toDateString() === new Date().toDateString()
-                    
-                    return (
-                      <div
-                        key={index}
-                        className={`min-h-[100px] p-2 border rounded-lg ${
-                          isCurrentMonth ? 'bg-background' : 'bg-muted/50'
-                        } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
-                      >
-                        <div className={`text-sm font-medium ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          {day.getDate()}
-                        </div>
-                        <div className="space-y-1 mt-1">
-                          {dayPlans.slice(0, 3).map(plan => (
-                            <div
-                              key={plan.id}
-                              className="text-xs p-1 bg-blue-100 text-blue-800 rounded truncate cursor-pointer hover:bg-blue-200"
-                              onClick={() => {
-                                setSelectedPlan(plan)
-                                setIsDetailDialogOpen(true)
-                              }}
-                              title={plan.title}
-                            >
-                              {plan.title}
-                            </div>
-                          ))}
-                          {dayPlans.length > 3 && (
-                            <div className="text-xs text-muted-foreground">
-                              +{dayPlans.length - 3} daha
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {calendarMode === "week" && (
-              <div className="space-y-4">
-                {/* Week Header */}
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">
-                    {formatCalendarDate(getWeekDays(selectedDate)[0])} - {formatCalendarDate(getWeekDays(selectedDate)[6])}
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 7 * 24 * 60 * 60 * 1000))}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 7 * 24 * 60 * 60 * 1000))}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Week Calendar */}
-                <div className="grid grid-cols-7 gap-4">
-                  {getWeekDays(selectedDate).map((day, index) => {
-                    const dayPlans = getPlansForDate(day)
-                    const isToday = day.toDateString() === new Date().toDateString()
-                    
-                    return (
-                      <div key={index} className="space-y-2">
-                        <div className={`text-center font-medium ${isToday ? 'text-blue-600' : 'text-foreground'}`}>
-                          {day.toLocaleDateString('tr-TR', { weekday: 'short' })}
-                          <div className="text-sm">{day.getDate()}</div>
-                        </div>
-                        <div className="space-y-1 min-h-[200px]">
-                          {dayPlans.map(plan => (
-                            <div
-                              key={plan.id}
-                              className="text-xs p-2 bg-blue-100 text-blue-800 rounded cursor-pointer hover:bg-blue-200"
-                              onClick={() => {
-                                setSelectedPlan(plan)
-                                setIsDetailDialogOpen(true)
-                              }}
-                            >
-                              <div className="font-medium truncate">{plan.title}</div>
-                              <div className="text-blue-600">{plan.instructor}</div>
-                              <div className="text-blue-500">{plan.startDate}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {calendarMode === "day" && (
-              <div className="space-y-4">
-                {/* Day Header */}
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">
-                    {formatCalendarDate(selectedDate)}
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 24 * 60 * 60 * 1000))}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000))}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Day Calendar */}
-                <div className="space-y-2">
-                  {getPlansForDate(selectedDate).map(plan => {
-                    const conflicts = checkForConflicts(plan)
-                    return (
-                      <Card key={plan.id} className={`${conflicts.length > 0 ? 'border-red-200 bg-red-50' : ''}`}>
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-1">
-                              <h4 className="font-medium">{plan.title}</h4>
-                              <p className="text-sm text-muted-foreground">{plan.instructor}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {plan.startDate} - {plan.endDate}
-                              </p>
-                              {conflicts.length > 0 && (
-                                <div className="text-sm text-red-600">
-                                  ⚠️ {conflicts.length} çakışma tespit edildi
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedPlan(plan)
-                                  setIsDetailDialogOpen(true)
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              {canEdit(plan) && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditPlan(plan)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                  {getPlansForDate(selectedDate).length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>Bu tarihte eğitim planı bulunmuyor</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Eğitim Planları Listesi */}
-          <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Eğitim Planları ({filteredPlans.length})</CardTitle>
-              <CardDescription>
-                {selectedStatus !== "all" && `Durum: ${statusFilters.find(s => s.id === selectedStatus)?.name}`}
-                {selectedCategory !== "all" && ` | Kategori: ${categoryFilters.find(c => c.id === selectedCategory)?.name}`}
-                {searchTerm && ` | Arama: "${searchTerm}"`}
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Sırala" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="title">Başlık</SelectItem>
-                  <SelectItem value="startDate">Başlangıç Tarihi</SelectItem>
-                  <SelectItem value="endDate">Bitiş Tarihi</SelectItem>
-                  <SelectItem value="completionRate">Tamamlanma Oranı</SelectItem>
-                  <SelectItem value="satisfactionScore">Memnuniyet Skoru</SelectItem>
-                  <SelectItem value="cost">Maliyet</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-              >
-                {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {viewMode === "list" ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {hasPermission("delete") && (
-                    <TableHead>
-                      <Checkbox
-                        checked={selectedPlans.length === filteredPlans.length && filteredPlans.length > 0}
-                        onCheckedChange={handleSelectAllPlans}
-                      />
-                    </TableHead>
-                  )}
-                  <TableHead>Eğitim</TableHead>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead>Durum</TableHead>
-                  <TableHead>Başlangıç</TableHead>
-                  <TableHead>Bitiş</TableHead>
-                  <TableHead>Katılımcı</TableHead>
-                  <TableHead>Maliyet</TableHead>
-                  <TableHead>İşlemler</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedPlans.map((plan) => {
-                  const daysUntilStart = getDaysUntilStart(plan.startDate)
-                  const daysUntilEnd = getDaysUntilEnd(plan.endDate)
-                  
-                  return (
-                    <TableRow key={plan.id}>
-                      {hasPermission("delete") && (
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedPlans.includes(plan.id)}
-                            onCheckedChange={(checked) => handleSelectPlan(plan.id, checked as boolean)}
-                          />
-                        </TableCell>
-                      )}
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">{plan.title}</div>
-                          <div className="text-sm text-muted-foreground">{plan.instructor}</div>
-                          <div className="text-xs text-muted-foreground">{plan.department}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getCategoryColor(plan.category)}>
-                          {getCategoryText(plan.category)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(plan.status)}
-                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(plan.status)}`}>
-                            {getStatusText(plan.status)}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">{formatDate(plan.startDate)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {daysUntilStart > 0 ? `${daysUntilStart} gün kaldı` : `${Math.abs(daysUntilStart)} gün geçti`}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">{formatDate(plan.endDate)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {daysUntilEnd > 0 ? `${daysUntilEnd} gün kaldı` : `${Math.abs(daysUntilEnd)} gün geçti`}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm font-medium">{plan.currentParticipants}/{plan.maxParticipants}</div>
-                        <Progress value={(plan.currentParticipants / plan.maxParticipants) * 100} className="h-2" />
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm font-medium">{formatCurrency(plan.cost)}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedPlan(plan)
-                              setIsDetailDialogOpen(true)
-                            }}
-                            title="Detayları Görüntüle"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {canEdit(plan) && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleEditPlan(plan)}
-                              title="Düzenle"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleAttachmentDialog(plan)}
-                            title="Dosya Yönetimi"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          {canSendEmail() && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleEmailNotification(plan, "reminder")}
-                              title="E-posta Gönder"
-                            >
-                              <Mail className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {canDelete(plan) && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleDeletePlan(plan)}
-                              title="Sil"
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {paginatedPlans.map((plan) => {
-                const daysUntilStart = getDaysUntilStart(plan.startDate)
-                const daysUntilEnd = getDaysUntilEnd(plan.endDate)
-                
-                return (
-                  <Card key={plan.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <CardTitle className="text-lg">{plan.title}</CardTitle>
-                          <CardDescription>{plan.instructor} - {plan.department}</CardDescription>
-                        </div>
-                        <div className="flex gap-1">
-                          <Badge className={getCategoryColor(plan.category)}>
-                            {getCategoryText(plan.category)}
-                          </Badge>
-                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(plan.status)}`}>
-                            {getStatusText(plan.status)}
-                          </span>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Başlangıç:</span>
-                          <span>{formatDate(plan.startDate)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Bitiş:</span>
-                          <span>{formatDate(plan.endDate)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Süre:</span>
-                          <span>{plan.duration} saat</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Katılımcı:</span>
-                          <span>{plan.currentParticipants}/{plan.maxParticipants}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Maliyet:</span>
-                          <span className="font-medium">{formatCurrency(plan.cost)}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Tamamlanma Oranı</span>
-                          <span>{plan.completionRate}%</span>
-                        </div>
-                        <Progress value={plan.completionRate} className="h-2" />
-                      </div>
-
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => {
-                            setSelectedPlan(plan)
-                            setIsDetailDialogOpen(true)
-                          }}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Görüntüle
-                        </Button>
-                        {canEdit(plan) && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditPlan(plan)}
-                            title="Düzenle"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleAttachmentDialog(plan)}
-                          title="Dosya Yönetimi"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        {canSendEmail() && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEmailNotification(plan, "reminder")}
-                            title="E-posta Gönder"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-        
-        {/* Pagination - Subtle ve Kompakt */}
-        <div className="pt-2">
-          <div className="flex justify-end">
-            <div className="flex items-center gap-2 bg-white/50 border border-gray-100 rounded-md px-3 py-1.5 text-xs">
-              {/* Sayfa Başına Kayıt */}
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">Sayfa:</span>
-                <Select value={itemsPerPage.toString()} onValueChange={(value) => handleItemsPerPageChange(parseInt(value))}>
-                  <SelectTrigger className="w-12 h-6 text-xs border-0 bg-transparent p-0 h-auto">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Kayıt Bilgisi */}
-              <div className="text-muted-foreground hidden sm:block">
-                {startIndex + 1}-{Math.min(endIndex, filteredPlans.length)}/{filteredPlans.length}
-              </div>
-
-              {/* Pagination Butonları */}
-              <div className="flex items-center gap-0.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="h-6 w-6 p-0 hover:bg-gray-100"
-                >
-                  <ChevronLeft className="h-3 w-3" />
-                </Button>
-                
-                <div className="flex items-center gap-0.5">
-                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                    let pageNumber
-                    if (totalPages <= 3) {
-                      pageNumber = i + 1
-                    } else if (currentPage <= 2) {
-                      pageNumber = i + 1
-                    } else if (currentPage >= totalPages - 1) {
-                      pageNumber = totalPages - 2 + i
-                    } else {
-                      pageNumber = currentPage - 1 + i
-                    }
-                    
-                    return (
-                      <Button
-                        key={pageNumber}
-                        variant={currentPage === pageNumber ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => handlePageChange(pageNumber)}
-                        className="h-6 w-6 p-0 text-xs hover:bg-gray-100"
-                      >
-                        {pageNumber}
-                      </Button>
-                    )
-                  })}
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="h-6 w-6 p-0 hover:bg-gray-100"
-                >
-                  <ChevronRight className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Eğitim Detay Dialog */}
-      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {selectedPlan && getStatusIcon(selectedPlan.status)}
-              {selectedPlan?.title}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedPlan?.instructor} - {selectedPlan?.department}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPlan && (
-            <div className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Eğitim Bilgileri</h4>
-                  <div className="space-y-1 text-sm">
-                    <div><strong>Başlık:</strong> {selectedPlan.title}</div>
-                    <div><strong>Kategori:</strong> {getCategoryText(selectedPlan.category)}</div>
-                    <div><strong>Tür:</strong> {selectedPlan.type}</div>
-                    <div><strong>Seviye:</strong> {selectedPlan.level}</div>
-                    <div><strong>Süre:</strong> {selectedPlan.duration} saat</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">Tarih ve Konum</h4>
-                  <div className="space-y-1 text-sm">
-                    <div><strong>Başlangıç:</strong> {formatDate(selectedPlan.startDate)}</div>
-                    <div><strong>Bitiş:</strong> {formatDate(selectedPlan.endDate)}</div>
-                    <div><strong>Konum:</strong> {selectedPlan.location}</div>
-                    <div><strong>Eğitmen:</strong> {selectedPlan.instructor}</div>
-                    <div><strong>Durum:</strong> {getStatusText(selectedPlan.status)}</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-medium">Açıklama</h4>
-                <p className="text-sm text-muted-foreground">{selectedPlan.description}</p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Hedefler</h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                    {selectedPlan.objectives.map((objective, index) => (
-                      <li key={index}>{objective}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">Önkoşullar</h4>
-                  <p className="text-sm text-muted-foreground">{selectedPlan.prerequisites}</p>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Katılımcı Bilgileri</h4>
-                  <div className="space-y-1 text-sm">
-                    <div><strong>Mevcut Katılımcı:</strong> {selectedPlan.currentParticipants}</div>
-                    <div><strong>Maksimum Katılımcı:</strong> {selectedPlan.maxParticipants}</div>
-                    <div><strong>Doluluk Oranı:</strong> {Math.round((selectedPlan.currentParticipants / selectedPlan.maxParticipants) * 100)}%</div>
-                    <Progress value={(selectedPlan.currentParticipants / selectedPlan.maxParticipants) * 100} className="h-2" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">Değerlendirme</h4>
-                  <div className="space-y-1 text-sm">
-                    <div><strong>Değerlendirme Yöntemi:</strong> {selectedPlan.assessmentMethod}</div>
-                    <div><strong>Geçme Notu:</strong> {selectedPlan.passingScore}</div>
-                    <div><strong>Sertifika Veriliyor:</strong> {selectedPlan.certificateIssued ? "Evet" : "Hayır"}</div>
-                    <div><strong>Memnuniyet Skoru:</strong> {selectedPlan.satisfactionScore}/5</div>
-                    <div><strong>Etkinlik Skoru:</strong> {selectedPlan.effectivenessScore}/5</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Mali Bilgiler</h4>
-                  <div className="space-y-1 text-sm">
-                    <div><strong>Maliyet:</strong> {formatCurrency(selectedPlan.cost)}</div>
-                    <div><strong>Bütçe:</strong> {formatCurrency(selectedPlan.budget)}</div>
-                    <div><strong>Öncelik:</strong> {getPriorityText(selectedPlan.priority)}</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">Performans Metrikleri</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Tamamlanma Oranı:</span>
-                      <span>{selectedPlan.completionRate}%</span>
-                    </div>
-                    <Progress value={selectedPlan.completionRate} className="h-2" />
-                    
-                    <div className="flex justify-between text-sm">
-                      <span>Memnuniyet:</span>
-                      <span>{selectedPlan.satisfactionScore}/5</span>
-                    </div>
-                    <Progress value={(selectedPlan.satisfactionScore / 5) * 100} className="h-2" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-medium">Eğitim Materyalleri</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedPlan.materials.map((material, index) => (
-                    <Badge key={index} variant="outline">{material}</Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-medium">Notlar</h4>
-                <p className="text-sm text-muted-foreground">{selectedPlan.notes}</p>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>
-              Kapat
-            </Button>
-            <Button onClick={() => {
-              if (selectedPlan) {
-                handleEditPlan(selectedPlan)
-                setIsDetailDialogOpen(false)
-              }
-            }}>
-              <Edit className="h-4 w-4 mr-2" />
-              Düzenle
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Düzenleme Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingPlan ? "Eğitim Planını Düzenle" : "Yeni Eğitim Planı"}
-            </DialogTitle>
-            <DialogDescription>
-              Eğitim planı bilgilerini düzenleyin veya yeni plan oluşturun
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="title">Başlık *</Label>
-                <Input
-                  id="title"
-                  value={formData.title || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className={formErrors.title ? "border-red-500" : ""}
-                />
-                {formErrors.title && <p className="text-sm text-red-500">{formErrors.title}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="instructor">Eğitmen *</Label>
-                <Input
-                  id="instructor"
-                  value={formData.instructor || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, instructor: e.target.value }))}
-                  className={formErrors.instructor ? "border-red-500" : ""}
-                />
-                {formErrors.instructor && <p className="text-sm text-red-500">{formErrors.instructor}</p>}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Açıklama *</Label>
-              <Textarea
-                id="description"
-                value={formData.description || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className={formErrors.description ? "border-red-500" : ""}
-                rows={3}
-              />
-              {formErrors.description && <p className="text-sm text-red-500">{formErrors.description}</p>}
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="category">Kategori</Label>
-                <Select
-                  value={formData.category || "technical"}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="technical">Teknik</SelectItem>
-                    <SelectItem value="safety">Güvenlik</SelectItem>
-                    <SelectItem value="compliance">Uyumluluk</SelectItem>
-                    <SelectItem value="soft_skills">Yumuşak Beceriler</SelectItem>
-                    <SelectItem value="leadership">Liderlik</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="type">Tür</Label>
-                <Select
-                  value={formData.type || "İç Eğitim"}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="İç Eğitim">İç Eğitim</SelectItem>
-                    <SelectItem value="Dış Eğitim">Dış Eğitim</SelectItem>
-                    <SelectItem value="Online Eğitim">Online Eğitim</SelectItem>
-                    <SelectItem value="Sertifikalı Eğitim">Sertifikalı Eğitim</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="level">Seviye</Label>
-                <Select
-                  value={formData.level || "Başlangıç"}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, level: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Başlangıç">Başlangıç</SelectItem>
-                    <SelectItem value="Orta">Orta</SelectItem>
-                    <SelectItem value="İleri">İleri</SelectItem>
-                    <SelectItem value="Uzman">Uzman</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Başlangıç Tarihi *</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={formData.startDate || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                  className={formErrors.startDate ? "border-red-500" : ""}
-                />
-                {formErrors.startDate && <p className="text-sm text-red-500">{formErrors.startDate}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endDate">Bitiş Tarihi *</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={formData.endDate || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                  className={formErrors.endDate ? "border-red-500" : ""}
-                />
-                {formErrors.endDate && <p className="text-sm text-red-500">{formErrors.endDate}</p>}
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="duration">Süre (Saat) *</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={formData.duration || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))}
-                  className={formErrors.duration ? "border-red-500" : ""}
-                />
-                {formErrors.duration && <p className="text-sm text-red-500">{formErrors.duration}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="maxParticipants">Maksimum Katılımcı *</Label>
-                <Input
-                  id="maxParticipants"
-                  type="number"
-                  value={formData.maxParticipants || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, maxParticipants: parseInt(e.target.value) || 0 }))}
-                  className={formErrors.maxParticipants ? "border-red-500" : ""}
-                />
-                {formErrors.maxParticipants && <p className="text-sm text-red-500">{formErrors.maxParticipants}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cost">Maliyet (₺) *</Label>
-                <Input
-                  id="cost"
-                  type="number"
-                  value={formData.cost || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cost: parseFloat(e.target.value) || 0 }))}
-                  className={formErrors.cost ? "border-red-500" : ""}
-                />
-                {formErrors.cost && <p className="text-sm text-red-500">{formErrors.cost}</p>}
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="location">Konum *</Label>
-                <Input
-                  id="location"
-                  value={formData.location || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  className={formErrors.location ? "border-red-500" : ""}
-                />
-                {formErrors.location && <p className="text-sm text-red-500">{formErrors.location}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="department">Departman</Label>
-                <Input
-                  id="department"
-                  value={formData.department || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="prerequisites">Önkoşullar</Label>
-              <Textarea
-                id="prerequisites"
-                value={formData.prerequisites || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, prerequisites: e.target.value }))}
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notlar</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                rows={3}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsEditDialogOpen(false)
-              setFormData({})
-              setFormErrors({})
-            }}>
-              İptal
-            </Button>
-            <Button onClick={() => handleSavePlan(formData)}>
-              {editingPlan ? "Güncelle" : "Oluştur"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Silme Onay Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Eğitim Planını Sil</DialogTitle>
-            <DialogDescription>
-              "{deletingPlan?.title}" eğitim planını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              İptal
-            </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              <X className="h-4 w-4 mr-2" />
-              Sil
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Delete Dialog */}
-      <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Seçilen Eğitim Planlarını Sil</DialogTitle>
-            <DialogDescription>
-              {selectedPlans.length} eğitim planını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBulkDeleteDialogOpen(false)}>
-              İptal
-            </Button>
-            <Button variant="destructive" onClick={confirmBulkDelete}>
-              <X className="h-4 w-4 mr-2" />
-              Sil ({selectedPlans.length})
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Status Change Dialog */}
-      <Dialog open={isBulkStatusDialogOpen} onOpenChange={setIsBulkStatusDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Seçilen Eğitim Planlarının Durumunu Değiştir</DialogTitle>
-            <DialogDescription>
-              {selectedPlans.length} eğitim planının durumunu değiştirin
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="bulkStatus">Yeni Durum</Label>
-              <Select value={bulkStatus} onValueChange={setBulkStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Durum seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="planned">Planlandı</SelectItem>
-                  <SelectItem value="ongoing">Devam Ediyor</SelectItem>
-                  <SelectItem value="completed">Tamamlandı</SelectItem>
-                  <SelectItem value="cancelled">İptal Edildi</SelectItem>
-                  <SelectItem value="postponed">Ertelendi</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBulkStatusDialogOpen(false)}>
-              İptal
-            </Button>
-            <Button onClick={confirmBulkStatusChange}>
-              <Settings className="h-4 w-4 mr-2" />
-              Durumu Değiştir ({selectedPlans.length})
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* File Attachment Dialog */}
-      <Dialog open={isAttachmentDialogOpen} onOpenChange={setIsAttachmentDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Dosya Yönetimi</DialogTitle>
-            <DialogDescription>
-              {selectedPlanForAttachment?.title} eğitim planına dosya ekleyin veya yönetin
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* File Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="file-upload">Dosya Yükle</Label>
-              <Input
-                id="file-upload"
-                type="file"
-                multiple
-                onChange={(e) => selectedPlanForAttachment && handleFileUpload(selectedPlanForAttachment.id, e.target.files)}
-                className="cursor-pointer"
-              />
-              <p className="text-sm text-muted-foreground">
-                PDF, DOC, XLS, PPT, JPG, PNG dosyalarını yükleyebilirsiniz (Max: 10MB)
-              </p>
-            </div>
-
-            {/* File List */}
-            <div className="space-y-2">
-              <Label>Yüklenen Dosyalar</Label>
-              {selectedPlanForAttachment && attachments[selectedPlanForAttachment.id]?.length > 0 ? (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {attachments[selectedPlanForAttachment.id].map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {getFileIcon(file.name)}
-                        <div>
-                          <p className="font-medium text-sm">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => selectedPlanForAttachment && handleFileRemove(selectedPlanForAttachment.id, index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Henüz dosya yüklenmemiş</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAttachmentDialogOpen(false)}>
-              Kapat
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Export Dialog */}
-      <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Dışa Aktar</DialogTitle>
-            <DialogDescription>
-              Eğitim planlarını farklı formatlarda dışa aktarın
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="exportFormat">Dosya Formatı</Label>
-              <Select value={exportFormat} onValueChange={setExportFormat}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="excel">Excel (.xlsx)</SelectItem>
-                  <SelectItem value="pdf">PDF (.pdf)</SelectItem>
-                  <SelectItem value="csv">CSV (.csv)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="exportRange">Aktarılacak Veri</Label>
-              <Select value={exportRange} onValueChange={setExportRange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Filtrelenmiş Veriler ({filteredPlans.length} kayıt)</SelectItem>
-                  <SelectItem value="current">Mevcut Sayfa ({paginatedPlans.length} kayıt)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">Dışa Aktarılacak Veriler:</h4>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Başlık, Açıklama, Kategori, Tür, Seviye</li>
-                <li>• Durum, Tarihler, Süre, Eğitmen</li>
-                <li>• Konum, Katılımcı Sayıları, Maliyet</li>
-                <li>• Departman, Öncelik, Oluşturan Bilgileri</li>
-              </ul>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>
-              İptal
-            </Button>
-            <Button onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Dışa Aktar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Import Dialog */}
-      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>İçe Aktar</DialogTitle>
-            <DialogDescription>
-              CSV dosyasından eğitim planlarını içe aktarın
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="importFile">CSV Dosyası Seçin</Label>
-              <Input
-                id="importFile"
-                type="file"
-                accept=".csv"
-                onChange={handleImport}
-                className="cursor-pointer"
-              />
-              <p className="text-sm text-muted-foreground">
-                Sadece CSV dosyaları desteklenmektedir
-              </p>
-            </div>
-
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <h4 className="font-medium text-yellow-900 mb-2">CSV Format Gereksinimleri:</h4>
-              <ul className="text-sm text-yellow-800 space-y-1">
-                <li>• İlk satır başlık satırı olmalıdır</li>
-                <li>• Virgül (,) ile ayrılmış değerler</li>
-                <li>• Metin değerleri çift tırnak içinde</li>
-                <li>• Desteklenen sütunlar: Başlık, Açıklama, Kategori, vb.</li>
-              </ul>
-            </div>
-
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h4 className="font-medium text-green-900 mb-2">Örnek CSV Formatı:</h4>
-              <pre className="text-xs text-green-800 bg-white p-2 rounded border overflow-x-auto">
-{`"Başlık","Açıklama","Kategori","Tür","Seviye","Durum"
-"ISO 17025 Eğitimi","Kalite yönetim sistemi eğitimi","compliance","İç Eğitim","Orta","planned"`}
-              </pre>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
-              Kapat
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Email Notifications Dialog */}
-      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>E-posta Bildirimi Gönder</DialogTitle>
-            <DialogDescription>
-              {selectedPlan?.title} eğitimi için e-posta bildirimi gönderin
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Template Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="emailTemplate">E-posta Şablonu</Label>
-              <Select value={emailTemplate} onValueChange={setEmailTemplate}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="reminder">Hatırlatma</SelectItem>
-                  <SelectItem value="update">Güncelleme</SelectItem>
-                  <SelectItem value="cancellation">İptal</SelectItem>
-                  <SelectItem value="completion">Tamamlama</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Recipients */}
-            <div className="space-y-2">
-              <Label>Alıcılar</Label>
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="E-posta adresi girin"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        addEmailRecipient(e.currentTarget.value)
-                        e.currentTarget.value = ''
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={(e) => {
-                      const input = e.currentTarget.previousElementSibling as HTMLInputElement
-                      addEmailRecipient(input.value)
-                      input.value = ''
-                    }}
-                  >
-                    Ekle
-                  </Button>
-                </div>
-                {emailRecipients.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {emailRecipients.map((email, index) => (
-                      <div key={index} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
-                        {email}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeEmailRecipient(email)}
-                          className="h-4 w-4 p-0 text-blue-600 hover:text-blue-800"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Subject */}
-            <div className="space-y-2">
-              <Label htmlFor="emailSubject">Konu</Label>
-              <Input
-                id="emailSubject"
-                value={emailSubject}
-                onChange={(e) => setEmailSubject(e.target.value)}
-              />
-            </div>
-
-            {/* Message */}
-            <div className="space-y-2">
-              <Label htmlFor="emailMessage">Mesaj</Label>
-              <Textarea
-                id="emailMessage"
-                value={emailMessage}
-                onChange={(e) => setEmailMessage(e.target.value)}
-                rows={10}
-                className="resize-none"
-              />
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Hızlı İşlemler</h4>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const upcomingPlans = getUpcomingPlans()
-                    if (upcomingPlans.length > 0) {
-                      setEmailRecipients(upcomingPlans.map(plan => plan.instructor))
-                      toast.success(`${upcomingPlans.length} eğitmen eklendi`)
-                    } else {
-                      toast.info("Yaklaşan eğitim bulunamadı")
-                    }
-                  }}
-                >
-                  Yaklaşan Eğitimler
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const overduePlans = getOverduePlans()
-                    if (overduePlans.length > 0) {
-                      setEmailRecipients(overduePlans.map(plan => plan.instructor))
-                      toast.success(`${overduePlans.length} eğitmen eklendi`)
-                    } else {
-                      toast.info("Geciken eğitim bulunamadı")
-                    }
-                  }}
-                >
-                  Geciken Eğitimler
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEmailRecipients(filteredPlans.map(plan => plan.instructor))
-                    toast.success(`${filteredPlans.length} eğitmen eklendi`)
-                  }}
-                >
-                  Tüm Eğitmenler
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
-              İptal
-            </Button>
-            <Button onClick={sendEmail}>
-              <Send className="h-4 w-4 mr-2" />
-              Gönder ({emailRecipients.length})
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Real-time Updates Notifications */}
-      {showUpdateNotification && (
-        <div className="fixed top-4 right-4 z-50 max-w-md">
-          <Card className="border-l-4 border-l-blue-500 shadow-lg">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-blue-500" />
-                  Gerçek Zamanlı Güncellemeler
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowUpdateNotification(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {updateNotifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50"
-                  >
-                    {getUpdateIcon(notification.type)}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatUpdateTime(notification.timestamp)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {updateNotifications.length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-4">
-                    Henüz güncelleme yok
-                  </p>
-                )}
-              </div>
-              {updateNotifications.length > 0 && (
-                <div className="flex justify-between items-center mt-4 pt-2 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearUpdateNotifications}
-                  >
-                    Temizle
-                  </Button>
-                  <div className="text-xs text-gray-500">
-                    Son güncelleme: {lastUpdateTime.toLocaleTimeString('tr-TR')}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-        </>
-      )}
+      <TrainingPlansList
+        plans={filteredPlans}
+        selectedPlans={selectedPlans}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        onSelectPlan={handlePlanSelection}
+        onSelectAllPlans={handleSelectAll}
+        onViewDetails={() => {}}
+        onEditPlan={() => {}}
+        onDeletePlan={() => {}}
+        hasPermission={hasPermission}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
+        onItemsPerPageChange={handleItemsPerPageChange}
+      />
     </div>
   )
 }

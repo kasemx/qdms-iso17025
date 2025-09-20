@@ -2,6 +2,8 @@
 
 Bu proje, ISO 9001, ISO 17025 ve ISO 14001 standartlarına uyumlu bir Kalite Doküman Yönetim Sistemi (QDMS) uygulamasıdır.
 
+> 📋 **Detaylı proje takip ve geliştirme planı için [`PROJECT_TRACKING.md`](./PROJECT_TRACKING.md) dosyasını inceleyiniz.**
+
 ## 🚀 Özellikler
 
 - **Doküman Yönetimi**: Doküman oluşturma, düzenleme, versiyonlama ve onay süreçleri
@@ -140,6 +142,13 @@ Herhangi bir sorun yaşarsanız, lütfen issue oluşturun veya iletişime geçin
 ---
 
 **Not**: Bu proje v0.dev platformunda geliştirilmiştir ve Next.js 15 ile modern React özelliklerini kullanmaktadır. Backend bileşenleri kaldırılmış olup, sadece frontend odaklı bir uygulamadır.
+
+## 📋 Proje Dokümantasyonu
+
+- **📊 [Project Tracking](./PROJECT_TRACKING.md)**: Kapsamlı proje takip, geliştirme planı ve ilerleme durumu
+- **📁 [Mock Data](./lib/mock-data.ts)**: Frontend için örnek veri yapısı
+- **🔧 [Types](./lib/types.ts)**: TypeScript tip tanımları
+- **⚙️ [Package Configuration](./package.json)**: Proje bağımlılıkları ve scriptler
 
 ## 🎯 Geliştirme Durumu
 
