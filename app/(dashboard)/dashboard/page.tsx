@@ -16,6 +16,7 @@ import { DashboardProvider, useDashboard, useDashboardData, useDashboardActions 
 import { NOTIFICATION_CONSTANTS, DASHBOARD_TABS } from "@/lib/constants/dashboard"
 import { OverviewTab, QualityTab, OperationsTab } from "@/components/dashboard/dashboard-tabs"
 import { ISOMapingTab, ComplianceTab } from "@/components/dashboard/dashboard-iso-tabs"
+import { EnhancedOverview } from "@/components/dashboard/enhanced-dashboard-cards"
 // Ana modül tabları için import'lar (mevcut ISO tab'ları korundu)
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -141,17 +142,42 @@ const DashboardPageContent = memo(function DashboardPageContent() {
         <InteractiveAnalytics data={dashboardData} />
 
       {/* Tab Navigation */}
-      <Tabs value={state.activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value={DASHBOARD_TABS.OVERVIEW}>Genel Bakış</TabsTrigger>
-          <TabsTrigger value={DASHBOARD_TABS.ISO_MAPPING}>ISO 17025 Haritası</TabsTrigger>
-          <TabsTrigger value={DASHBOARD_TABS.QUALITY}>Kalite Metrikleri</TabsTrigger>
-          <TabsTrigger value={DASHBOARD_TABS.OPERATIONS}>Operasyonel</TabsTrigger>
-          <TabsTrigger value={DASHBOARD_TABS.COMPLIANCE}>Uyumluluk</TabsTrigger>
+      <Tabs value={state.activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5 gap-2 bg-muted p-1 h-12">
+          <TabsTrigger 
+            value={DASHBOARD_TABS.OVERVIEW}
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 font-medium"
+          >
+            Genel Bakış
+          </TabsTrigger>
+          <TabsTrigger 
+            value={DASHBOARD_TABS.ISO_MAPPING}
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 font-medium"
+          >
+            ISO 17025
+          </TabsTrigger>
+          <TabsTrigger 
+            value={DASHBOARD_TABS.QUALITY}
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 font-medium"
+          >
+            Kalite
+          </TabsTrigger>
+          <TabsTrigger 
+            value={DASHBOARD_TABS.OPERATIONS}
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 font-medium"
+          >
+            Operasyonel
+          </TabsTrigger>
+          <TabsTrigger 
+            value={DASHBOARD_TABS.COMPLIANCE}
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 font-medium"
+          >
+            Uyumluluk
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value={DASHBOARD_TABS.OVERVIEW} className="space-y-6">
-          <OverviewTab dashboardData={dashboardData} />
+          <EnhancedOverview dashboardData={dashboardData} />
         </TabsContent>
 
         <TabsContent value={DASHBOARD_TABS.ISO_MAPPING} className="space-y-6">
