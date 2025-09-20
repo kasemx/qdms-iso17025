@@ -1,5 +1,6 @@
 "use client"
 
+import { memo, useCallback } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -46,6 +47,7 @@ import {
   User
 } from "lucide-react"
 import Link from "next/link"
+import { DOCUMENT_CONSTANTS } from "@/lib/constants/dashboard"
 
 interface Document {
   id: string
@@ -105,7 +107,7 @@ interface DocumentsListProps {
   canEdit: (document: Document) => boolean
 }
 
-export function DocumentsList({
+export const DocumentsList = memo<DocumentsListProps>(function DocumentsList({
   documents,
   selectedDocuments,
   onSelectDocument,
@@ -128,12 +130,12 @@ export function DocumentsList({
   onShowChangeControl,
   onDownload,
   canEdit
-}: DocumentsListProps) {
+}) {
 
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = useCallback((status: string) => {
     const statusColors = {
       "draft": "bg-gray-400",
       "review": "bg-yellow-400", 
@@ -143,9 +145,9 @@ export function DocumentsList({
       "active": "bg-emerald-400"
     }
     return <div className={`w-2 h-2 rounded-full ${statusColors[status as keyof typeof statusColors] || "bg-gray-400"}`}></div>
-  }
+  }, [])
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = useCallback((status: string) => {
     const variants = {
       "draft": "secondary",
       "review": "outline", 
@@ -155,9 +157,9 @@ export function DocumentsList({
       "active": "default"
     }
     return variants[status as keyof typeof variants] || "secondary"
-  }
+  }, [])
 
-  const getStatusText = (status: string) => {
+  const getStatusText = useCallback((status: string) => {
     const texts = {
       "draft": "Taslak",
       "review": "İnceleme",
@@ -167,23 +169,23 @@ export function DocumentsList({
       "active": "Aktif"
     }
     return texts[status as keyof typeof texts] || status
-  }
+  }, [])
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString('tr-TR', {
       day: '2-digit',
       month: '2-digit', 
       year: 'numeric'
     })
-  }
+  }, [])
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = useCallback((bytes: number) => {
     if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
+    const k = DOCUMENT_CONSTANTS.FILE_SIZE.CONVERSION_FACTOR
+    const sizes = DOCUMENT_CONSTANTS.FILE_SIZE.UNITS
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+  }, [])
 
   return (
     <Card>
@@ -203,13 +205,9 @@ export function DocumentsList({
                 <SelectValue placeholder="Sırala" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="title">Başlık</SelectItem>
-                <SelectItem value="code">Kod</SelectItem>
-                <SelectItem value="createdAt">Oluşturma Tarihi</SelectItem>
-                <SelectItem value="updatedAt">Güncelleme Tarihi</SelectItem>
-                <SelectItem value="fileSize">Dosya Boyutu</SelectItem>
-                <SelectItem value="author">Yazar</SelectItem>
-                <SelectItem value="status">Durum</SelectItem>
+                {DOCUMENT_CONSTANTS.PAGINATION.OPTIONS.map(option => (
+                  <SelectItem key={option} value={option.toString()}>{option}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             
@@ -226,10 +224,9 @@ export function DocumentsList({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
+                {DOCUMENT_CONSTANTS.PAGINATION.OPTIONS.map(option => (
+                  <SelectItem key={option} value={option.toString()}>{option}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -537,10 +534,9 @@ export function DocumentsList({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
+                    {DOCUMENT_CONSTANTS.PAGINATION.OPTIONS.map(option => (
+                      <SelectItem key={option} value={option.toString()}>{option}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -561,7 +557,7 @@ export function DocumentsList({
                 </Button>
                 
                 <div className="flex items-center gap-0.5">
-                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                  {Array.from({ length: Math.min(DOCUMENT_CONSTANTS.PAGINATION.MAX_PAGES_SHOWN, totalPages) }, (_, i) => {
                     let pageNumber
                     if (totalPages <= 3) {
                       pageNumber = i + 1
@@ -609,4 +605,4 @@ export function DocumentsList({
       </CardContent>
     </Card>
   )
-}
+})

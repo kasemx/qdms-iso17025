@@ -59,3 +59,26 @@ export const COMPONENT_LIMITS = {
   MAX_FUNCTION_LINES: 50,
   MAX_COMPLEXITY: 10,
 } as const
+
+// Document List Constants
+export const DOCUMENT_CONSTANTS = {
+  PAGINATION: {
+    DEFAULT_ITEMS_PER_PAGE: 10,
+    OPTIONS: [5, 10, 20, 50] as const,
+    MAX_PAGES_SHOWN: 3,
+  },
+  GRID: {
+    MOBILE_COLS: 1,
+    TABLET_COLS: 2,
+    DESKTOP_COLS: 3,
+  },
+  SEARCH: {
+    MIN_LENGTH: 2,
+    SUGGESTIONS_LIMIT: 5,
+    HISTORY_LIMIT: 10,
+  },
+  FILE_SIZE: {
+    UNITS: ['B', 'KB', 'MB', 'GB'] as const,
+    CONVERSION_FACTOR: 1024,
+  },
+} as const

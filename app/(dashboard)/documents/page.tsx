@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, memo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -73,6 +73,8 @@ import Link from "next/link"
 import { mockApi } from "@/lib/mock-data"
 import { toast } from "sonner"
 import { PageLayout, LoadingState } from "@/components/common"
+import { ErrorBoundary } from "@/components/common/error-boundary"
+import { DOCUMENT_CONSTANTS } from "@/lib/constants/dashboard"
 
 // Interface tanımları
 interface Document {
@@ -187,13 +189,13 @@ interface QuickFilter {
 }
 
 // Utility fonksiyonları
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return "0 Bytes"
-  const k = 1024
-  const sizes = ["Bytes", "KB", "MB", "GB"]
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
-}
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes"
+    const k = DOCUMENT_CONSTANTS.FILE_SIZE.CONVERSION_FACTOR
+    const sizes = DOCUMENT_CONSTANTS.FILE_SIZE.UNITS
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+  }
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("tr-TR")
@@ -299,7 +301,7 @@ export default function DocumentsPage() {
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(DOCUMENT_CONSTANTS.PAGINATION.DEFAULT_ITEMS_PER_PAGE as number)
   
   // Seçim ve toplu işlemler
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([])
@@ -454,7 +456,7 @@ export default function DocumentsPage() {
 
   // Arama önerileri oluşturma
   const generateSearchSuggestions = (query: string) => {
-    if (query.length < 2) return []
+    if (query.length < DOCUMENT_CONSTANTS.SEARCH.MIN_LENGTH) return []
     
     const suggestions: string[] = []
     const lowerQuery = query.toLowerCase()
@@ -476,14 +478,14 @@ export default function DocumentsPage() {
       })
     })
     
-    return [...new Set(suggestions)].slice(0, 5)
+    return [...new Set(suggestions)].slice(0, DOCUMENT_CONSTANTS.SEARCH.SUGGESTIONS_LIMIT)
   }
 
   // Arama geçmişi yönetimi
   const addToSearchHistory = (query: string) => {
     if (!query.trim()) return
     
-    const newHistory = [query, ...searchHistory.filter(item => item !== query)].slice(0, 10)
+    const newHistory = [query, ...searchHistory.filter(item => item !== query)].slice(0, DOCUMENT_CONSTANTS.SEARCH.HISTORY_LIMIT)
     setSearchHistory(newHistory)
     localStorage.setItem("documentSearchHistory", JSON.stringify(newHistory))
   }
@@ -2055,4 +2057,26 @@ const buildHierarchicalStructure = (docs: Document[], expandedCategories: Set<st
   })
 
   return hierarchical
+}
+
+/**
+ * Documents Page Content Component
+ */
+const DocumentsPageContent = memo(function DocumentsPageContent() {
+  // State'ler buraya taşınacak...
+  // Ana logic buraya taşınacak...
+  return (
+    <div>Documents page content will be implemented</div>
+  )
+})
+
+/**
+ * Main Documents Page Export with ErrorBoundary
+ */
+export default function DocumentsPage() {
+  return (
+    <ErrorBoundary>
+      <DocumentsPageContent />
+    </ErrorBoundary>
+  )
 }
