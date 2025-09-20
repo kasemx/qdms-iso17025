@@ -79,6 +79,37 @@ const ModernButton = ({ children, variant = "primary", size = "default", classNa
   </Button>
 )
 
+// Icon wrapper component to ensure consistent rendering
+const IconWrapper = ({ icon: Icon, className, width = "16", height = "16", ...props }: any) => {
+  // Safety check for string icons (emojis)
+  if (typeof Icon === 'string') {
+    return (
+      <span 
+        className={cn(className, "flex-shrink-0 inline-flex items-center justify-center")} 
+        style={{ width: `${width}px`, height: `${height}px` }}
+        {...props}
+      >
+        {Icon}
+      </span>
+    );
+  }
+  
+  // Safety check to ensure Icon is a valid React component
+  if (!Icon || typeof Icon !== 'function') {
+    // If Icon is not a valid component, render nothing
+    return null;
+  }
+  
+  return (
+    <Icon 
+      className={cn(className, "flex-shrink-0")} 
+      width={width} 
+      height={height} 
+      {...props} 
+    />
+  );
+}
+
 interface ModernSidebarProps {
   className?: string
 }
@@ -206,7 +237,11 @@ export function ModernSidebar({ className }: ModernSidebarProps) {
                 {/* Section Header */}
                 {!state.isCollapsed && (
                   <div className="flex items-center space-x-2 px-3 py-2">
-                    {section.icon && <IconWrapper icon={section.icon} className="text-lg" />}
+                    {section.icon && (
+                      <span className="text-lg flex-shrink-0">
+                        {section.icon}
+                      </span>
+                    )}
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       {section.title}
                     </h3>
@@ -450,13 +485,3 @@ export function ModernSidebar({ className }: ModernSidebarProps) {
     </>
   )
 }
-
-// Icon wrapper component to ensure consistent rendering
-const IconWrapper = ({ icon: Icon, className, width = "16", height = "16", ...props }: any) => (
-  <Icon 
-    className={cn(className, "flex-shrink-0")} 
-    width={width} 
-    height={height} 
-    {...props} 
-  />
-)

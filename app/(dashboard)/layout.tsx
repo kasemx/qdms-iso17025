@@ -1,6 +1,6 @@
 import type React from "react"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/layout/header"
+import { ModernSidebar } from "@/components/layout/modern-sidebar"
+import { ModernHeader } from "@/components/layout/modern-header"
 
 export default function DashboardLayout({
   children,
@@ -9,9 +9,9 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <ModernSidebar />
       <div className="lg:pl-64">
-        <Header />
+        <ModernHeader />
         <main className="p-6 lg:p-8">{children}</main>
       </div>
     </div>
