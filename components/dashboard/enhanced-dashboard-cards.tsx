@@ -49,9 +49,17 @@ export const EnhancedOverview = memo<EnhancedOverviewProps>(function EnhancedOve
   return (
     <div className="space-y-8">
       {/* Critical Alerts Section */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">⚠️ Kritik Uyarılar</h3>
+          <div>
+            <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <span className="text-orange-500">⚠️</span>
+              Kritik Uyarılar
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Acil müdahale gerektiren durumlar
+            </p>
+          </div>
           <Button variant="outline" size="sm">
             <Eye className="w-4 h-4 mr-2" />
             Tümünü Gör
@@ -143,8 +151,16 @@ export const EnhancedOverview = memo<EnhancedOverviewProps>(function EnhancedOve
       </div>
 
       {/* Key Performance Indicators */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">📊 Ana Performans Göstergeleri</h3>
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+            <span className="text-blue-500">📊</span>
+            Ana Performans Göstergeleri
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            ISO 17025 uyumluluğu için önemli metrikler
+          </p>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Doküman Durumu */}
@@ -306,8 +322,16 @@ export const EnhancedOverview = memo<EnhancedOverviewProps>(function EnhancedOve
       </div>
 
       {/* Quick Actions */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">⚡ Hızlı İşlemler</h3>
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+            <span className="text-purple-500">⚡</span>
+            Hızlı İşlemler
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Sık kullanılan işlemler için kısayollar
+          </p>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Button variant="outline" className="h-16 flex-col space-y-1">

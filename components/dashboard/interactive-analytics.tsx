@@ -83,13 +83,13 @@ export function InteractiveAnalytics({ data }: InteractiveAnalyticsProps) {
   const performancePercentage = Math.round((performanceIncrease / analyticsData.testPerformance.lastMonth) * 100)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Analytics Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">İnteraktif Analitik Dashboard</h3>
-          <p className="text-sm text-muted-foreground">
-            Gerçek zamanlı performans metrikleri ve trendler
+          <h3 className="text-xl font-semibold text-foreground">📈 İnteraktif Analitik Dashboard</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerçek zamanlı performans metrikleri ve detaylı trendler
           </p>
         </div>
         <div className="flex gap-2">
@@ -114,7 +114,7 @@ export function InteractiveAnalytics({ data }: InteractiveAnalyticsProps) {
           variant={selectedChart === 'overview' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setSelectedChart('overview')}
-          className="flex-1"
+          className="flex-1 h-10"
         >
           <BarChart3 className="h-4 w-4 mr-2" />
           Genel Bakış
@@ -123,7 +123,7 @@ export function InteractiveAnalytics({ data }: InteractiveAnalyticsProps) {
           variant={selectedChart === 'performance' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setSelectedChart('performance')}
-          className="flex-1"
+          className="flex-1 h-10"
         >
           <PieChart className="h-4 w-4 mr-2" />
           Performans
@@ -132,7 +132,7 @@ export function InteractiveAnalytics({ data }: InteractiveAnalyticsProps) {
           variant={selectedChart === 'trends' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setSelectedChart('trends')}
-          className="flex-1"
+          className="flex-1 h-10"
         >
           <LineChart className="h-4 w-4 mr-2" />
           Trendler
@@ -145,6 +145,7 @@ export function InteractiveAnalytics({ data }: InteractiveAnalyticsProps) {
           variant={timeRange === 'week' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setTimeRange('week')}
+          className="h-9"
         >
           Haftalık
         </Button>
@@ -152,6 +153,7 @@ export function InteractiveAnalytics({ data }: InteractiveAnalyticsProps) {
           variant={timeRange === 'month' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setTimeRange('month')}
+          className="h-9"
         >
           Aylık
         </Button>
@@ -159,6 +161,7 @@ export function InteractiveAnalytics({ data }: InteractiveAnalyticsProps) {
           variant={timeRange === 'quarter' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setTimeRange('quarter')}
+          className="h-9"
         >
           Üç Aylık
         </Button>

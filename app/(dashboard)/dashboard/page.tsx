@@ -18,9 +18,6 @@ import { OverviewTab, QualityTab, OperationsTab } from "@/components/dashboard/d
 import { ISOMapingTab, ComplianceTab } from "@/components/dashboard/dashboard-iso-tabs"
 import { EnhancedOverview } from "@/components/dashboard/enhanced-dashboard-cards"
 // Ana modül tabları için import'lar (mevcut ISO tab'ları korundu)
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import {
   FileText, 
   Clock, 
@@ -136,10 +133,9 @@ const DashboardPageContent = memo(function DashboardPageContent() {
           </div>
         }
       >
-        {/* Dashboard Components */}
-        <DashboardStats data={dashboardData} />
+        {/* Enhanced Dashboard Overview - Unified Design */}
+        <EnhancedOverview dashboardData={dashboardData} />
         <LiveMonitoring data={dashboardData} />
-        <InteractiveAnalytics data={dashboardData} />
 
       {/* Tab Navigation */}
       <Tabs value={state.activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -177,7 +173,7 @@ const DashboardPageContent = memo(function DashboardPageContent() {
         </TabsList>
 
         <TabsContent value={DASHBOARD_TABS.OVERVIEW} className="space-y-6">
-          <EnhancedOverview dashboardData={dashboardData} />
+          <InteractiveAnalytics data={dashboardData} />
         </TabsContent>
 
         <TabsContent value={DASHBOARD_TABS.ISO_MAPPING} className="space-y-6">
@@ -196,162 +192,6 @@ const DashboardPageContent = memo(function DashboardPageContent() {
           <ComplianceTab dashboardData={dashboardData} />
         </TabsContent>
       </Tabs>
-
-      {/* Hızlı Erişim ve Özet */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sistem Durumu Özeti */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Activity className="h-5 w-5" />
-              <span>Sistem Durumu Özeti</span>
-            </CardTitle>
-            <CardDescription>ISO 17025 uyumluluk durumu ve kritik göstergeler</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Uyumluluk Skoru */}
-              <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-lg">ISO 17025 Uyumluluk Skoru</h3>
-                  <Badge className="bg-green-100 text-green-800">%92</Badge>
-                </div>
-                <Progress value={92} className="h-3" />
-                <p className="text-sm text-muted-foreground mt-2">
-                  Tüm modüller aktif ve güncel durumda
-                </p>
-              </div>
-
-              {/* Kritik Uyarılar */}
-              <div className="space-y-3">
-                <h4 className="font-medium text-sm text-muted-foreground">Kritik Uyarılar</h4>
-                {dashboardData.equipment.due > 0 && (
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-orange-50 border border-orange-200">
-                    <AlertTriangle className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="text-sm font-medium text-orange-800">
-                        {dashboardData.equipment.due} ekipman kalibrasyon gerektiriyor
-                      </p>
-                      <p className="text-xs text-orange-600">30 gün içinde kalibre edilmeli</p>
-                    </div>
-                  </div>
-                )}
-                
-                {dashboardData.risks.high > 0 && (
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-red-50 border border-red-200">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    <div>
-                      <p className="text-sm font-medium text-red-800">
-                        {dashboardData.risks.high} yüksek riskli durum tespit edildi
-                      </p>
-                      <p className="text-xs text-red-600">Acil müdahale gerekli</p>
-                    </div>
-                  </div>
-                )}
-
-                {dashboardData.personnel.expired > 0 && (
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                    <Clock className="h-5 w-5 text-yellow-600" />
-                    <div>
-                      <p className="text-sm font-medium text-yellow-800">
-                        {dashboardData.personnel.expired} personel sertifikası süresi dolmuş
-                      </p>
-                      <p className="text-xs text-yellow-600">Yenileme işlemi gerekli</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Hızlı İstatistikler */}
-        <div className="space-y-6">
-          {/* Bu Ay Özeti */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4" />
-                <span>Bu Ay Özeti</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Onaylanan Dokümanlar</span>
-                  <div className="flex items-center space-x-2">
-                    <ArrowUpRight className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">{dashboardData.documents.approved}</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Tamamlanan Testler</span>
-                  <div className="flex items-center space-x-2">
-                    <ArrowUpRight className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">{dashboardData.tests.completed}</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Çözülen Şikayetler</span>
-                  <div className="flex items-center space-x-2">
-                    <ArrowUpRight className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">{dashboardData.complaints.resolved}</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Kapatılan CAPA'lar</span>
-                  <div className="flex items-center space-x-2">
-                    <ArrowUpRight className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">{dashboardData.capas.closed}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Performans Göstergeleri */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4" />
-                <span>Performans</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Test Başarı Oranı</span>
-                  <span className="text-sm font-medium text-green-600">
-                    {dashboardData.tests.total > 0 ? 
-                      Math.round((dashboardData.tests.completed / dashboardData.tests.total) * 100) : 0}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Yeterlilik Başarı Oranı</span>
-                  <span className="text-sm font-medium text-green-600">
-                    {dashboardData.proficiency.total > 0 ? 
-                      Math.round((dashboardData.proficiency.passed / dashboardData.proficiency.total) * 100) : 0}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Şikayet Çözüm Oranı</span>
-                  <span className="text-sm font-medium text-green-600">
-                    {dashboardData.complaints.total > 0 ? 
-                      Math.round((dashboardData.complaints.resolved / dashboardData.complaints.total) * 100) : 0}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Ekipman Aktif Oranı</span>
-                  <span className="text-sm font-medium text-green-600">
-                    {dashboardData.equipment.total > 0 ? 
-                      Math.round((dashboardData.equipment.calibrated / dashboardData.equipment.total) * 100) : 0}%
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
       </PageLayout>
     </>
   )
