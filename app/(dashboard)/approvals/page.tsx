@@ -23,7 +23,7 @@ import { getPriorityBadge } from "@/lib/priority-utils"
 export default function ApprovalsPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
-  const [pendingApprovals, setPendingApprovals] = useState([])
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([])
   const [approvalComment, setApprovalComment] = useState("")
   const [rejectionReason, setRejectionReason] = useState("")
   const [processingId, setProcessingId] = useState<number | null>(null)
